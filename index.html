@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arielcodex - Acceso Restringido</title>
+    <title>Arielcodex - Reportes Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -12,7 +14,7 @@
         .dark-mode { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; }
         body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; font-family: sans-serif; }
         .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        #app-content { display: none; } /* Oculto por defecto */
+        #app-content { display: none; }
         #login-screen { display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; z-index: 50; background: #0f172a; }
     </style>
 </head>
@@ -21,9 +23,8 @@
     <div id="login-screen">
         <div class="glass p-8 rounded-3xl shadow-2xl w-80 text-center border-t-4 border-blue-500">
             <h2 class="text-blue-500 font-black text-2xl tracking-tighter mb-2">ARIELCODEX<span class="text-white font-light">.sys</span></h2>
-            <p class="text-gray-400 text-[10px] uppercase font-bold mb-6 tracking-widest">Identificación de Usuario</p>
-            <input type="text" id="passInput" placeholder="Nombre de usuario..." class="w-full p-4 rounded-xl bg-gray-800 text-white outline-none focus:ring-2 focus:ring-blue-500 text-center mb-4 uppercase">
-            <button onclick="validarAcceso()" class="w-full py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg hover:bg-blue-500 transition-all">INGRESAR</button>
+            <input type="text" id="passInput" placeholder="Operador..." class="w-full p-4 rounded-xl bg-gray-800 text-white outline-none focus:ring-2 focus:ring-blue-500 text-center mb-4 uppercase">
+            <button onclick="validarAcceso()" class="w-full py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg">INGRESAR</button>
             <p id="errorLogin" class="text-red-500 text-[10px] mt-4 font-bold hidden uppercase">Usuario no autorizado</p>
         </div>
     </div>
@@ -34,23 +35,7 @@
                 <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
                 <p id="fecha-dispositivo" class="text-[10px] font-bold opacity-50 uppercase"></p>
             </div>
-            <div class="flex gap-2">
-                <button onclick="cerrarSesion()" class="p-2 rounded-full bg-red-100 text-red-600 text-xs font-bold">SALIR</button>
-                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌙</button>
-            </div>
-        </div>
-
-        <div class="glass rounded-2xl p-4 mb-6 shadow-md border-b-4 border-blue-500 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <span class="text-2xl">👤</span>
-                <div>
-                    <label class="text-[9px] font-black text-blue-500 uppercase tracking-widest">Operador Activo</label>
-                    <p id="displayUsuario" class="font-black text-lg leading-tight uppercase"></p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p id="reloj-mini" class="text-xs font-bold opacity-50"></p>
-            </div>
+            <button onclick="cerrarSesion()" class="p-2 rounded-full bg-red-100 text-red-600 text-[10px] font-black uppercase">Salir</button>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-xl space-y-4 mb-8">
@@ -58,30 +43,25 @@
             <div class="grid grid-cols-2 gap-2">
                 <button onclick="startScanner('registro')" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear</button>
                 <label class="py-3 rounded-2xl bg-indigo-600 text-white font-bold text-[10px] text-center cursor-pointer uppercase">
-                    📄 Leer Foto
+                    📄 Foto
                     <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
                 </label>
             </div>
             <div class="space-y-3 pt-2">
-                <input type="text" id="nroFactura" oninput="validarForm()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="text" id="descripcion" placeholder="Notas..." class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
+                <input type="text" id="nroFactura" oninput="validarForm()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
+                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
             </div>
-            <div class="flex gap-2">
-                <button onclick="enviarDatos()" id="btnEnviar" class="flex-grow py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg transition-all" disabled>GUARDAR</button>
-                <button id="btnRafaga" onclick="toggleRafaga()" class="px-4 rounded-2xl bg-gray-200 dark:bg-gray-700 text-lg shadow-md">🚀</button>
-            </div>
+            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg" disabled>GUARDAR REGISTRO</button>
         </div>
 
         <div class="space-y-4">
-            <div class="relative">
-                <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar registros..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none pr-12">
-                <button onclick="startScanner('busqueda')" class="absolute right-3 top-3 p-1.5 bg-blue-500 text-white rounded-xl shadow-lg">📷</button>
+            <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por fecha, N° o Droguería..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none">
+            
+            <div class="flex flex-wrap gap-2 px-2">
+                <button onclick="compartirReporte('whatsapp')" class="flex-grow py-2 bg-green-500 text-white text-[10px] font-black rounded-lg uppercase shadow-sm">🟢 WhatsApp PDF</button>
+                <button onclick="compartirReporte('mail')" class="flex-grow py-2 bg-blue-500 text-white text-[10px] font-black rounded-lg uppercase shadow-sm">🔵 Mail PDF</button>
             </div>
-            <div class="flex items-center justify-between px-2">
-                <p id="label-lista" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registros</p>
-                <button onclick="imprimirReporte()" id="btnImprimir" class="px-3 py-1.5 bg-blue-500 text-white text-[10px] font-black rounded-lg shadow-md uppercase">🖨️ Imprimir</button>
-            </div>
+
             <div id="listaFacturas" class="space-y-3"></div>
         </div>
     </div>
@@ -91,50 +71,27 @@
         let historialFacturas = [];
         let facturasSesionActual = [];
         let facturasFiltradas = [];
-        let modoRafaga = false;
         let usuarioActual = "";
 
-        // Al cargar, verificar si ya estaba logueado
         window.onload = () => {
             const guardado = sessionStorage.getItem('arielcodex_user');
-            if(guardado) {
-                accesoConcedido(guardado);
-            }
+            if(guardado) accesoConcedido(guardado);
             actualizarReloj();
             setInterval(actualizarReloj, 1000);
         };
 
         function validarAcceso() {
             const input = document.getElementById('passInput').value.trim().toUpperCase();
-            if (input === "ESTEBAN" || input === "OMAR") {
-                accesoConcedido(input);
-            } else {
-                const err = document.getElementById('errorLogin');
-                err.classList.remove('hidden');
-                setTimeout(() => err.classList.add('hidden'), 2000);
-            }
+            if (input === "ESTEBAN" || input === "OMAR") accesoConcedido(input);
+            else document.getElementById('errorLogin').classList.remove('hidden');
         }
 
         function accesoConcedido(user) {
             usuarioActual = user;
-            sessionStorage.setItem('arielcodex_user', user); // Dura mientras la pestaña esté abierta
+            sessionStorage.setItem('arielcodex_user', user);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            document.getElementById('displayUsuario').innerText = user;
             cargarHistorial();
-        }
-
-        function cerrarSesion() {
-            sessionStorage.clear();
-            location.reload();
-        }
-
-        function actualizarReloj() {
-            const ahora = new Date();
-            const ts = ahora.toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
-            const hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('fecha-dispositivo').innerText = ts;
-            if(document.getElementById('reloj-mini')) document.getElementById('reloj-mini').innerText = hora;
         }
 
         async function cargarHistorial() {
@@ -142,7 +99,94 @@
                 const res = await fetch(API_URL);
                 historialFacturas = await res.json();
                 filtrarFacturas();
-            } catch (e) { console.error("Error de red"); }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- LÓGICA DE GENERACIÓN Y ENVÍO DE PDF ---
+        async function generarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const busqueda = document.getElementById('busqueda').value;
+            const datos = busqueda !== "" ? facturasFiltradas : facturasSesionActual;
+
+            if (datos.length === 0) {
+                alert("No hay datos para generar el PDF.");
+                return null;
+            }
+
+            // Diseño del PDF
+            doc.setFontSize(18);
+            doc.setTextColor(59, 130, 246);
+            doc.text("ARIELCODEX.sys - Reporte de Carga", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Operador: ${usuarioActual}`, 14, 30);
+            doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 35);
+            doc.text(`Filtro: ${busqueda || "Sesión Actual"}`, 14, 40);
+
+            const filas = datos.map(f => [f.nroFactura, f.proveedor, f.descripcion]);
+            
+            doc.autoTable({
+                startY: 45,
+                head: [['N° Factura', 'Proveedor', 'Detalles']],
+                body: filas,
+                headStyles: { fillColor: [59, 130, 246] },
+            });
+
+            return doc.output('blob');
+        }
+
+        async function compartirReporte(metodo) {
+            const pdfBlob = await generarPDF();
+            if (!pdfBlob) return;
+
+            const fechaStr = new Date().toLocaleDateString().replace(/\//g, '-');
+            const file = new File([pdfBlob], `Reporte_${usuarioActual}_${fechaStr}.pdf`, { type: 'application/pdf' });
+
+            // Intentar usar la API de compartir nativa (funciona en móviles)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Reporte Arielcodex',
+                        text: `Envío reporte de facturas cargadas por ${usuarioActual}`
+                    });
+                } catch (err) { console.error("Error al compartir", err); }
+            } else {
+                // Si no soporta compartir archivos (PC), descarga o abre mail
+                if (metodo === 'whatsapp') {
+                    alert("En PC se descargará el archivo. Adjúntalo manualmente en WhatsApp Web.");
+                    const url = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Reporte_${usuarioActual}.pdf`;
+                    a.click();
+                } else {
+                    window.location.href = `mailto:?subject=Reporte Arielcodex - ${usuarioActual}&body=Adjunto reporte de facturas.`;
+                }
+            }
+        }
+
+        // --- Funciones base ---
+        function filtrarFacturas() {
+            const t = document.getElementById('busqueda').value.toLowerCase();
+            if (t === "") renderizarLista(historialFacturas.slice().reverse().slice(0, 5));
+            else {
+                const f = historialFacturas.filter(x => JSON.stringify(x).toLowerCase().includes(t)).reverse();
+                renderizarLista(f);
+            }
+        }
+
+        function renderizarLista(datos) {
+            facturasFiltradas = datos;
+            document.getElementById('listaFacturas').innerHTML = datos.map(f => `
+                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
+                    <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
+                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
+                    <p class="text-[9px] opacity-40 italic">${f.descripcion}</p>
+                </div>
+            `).join('');
         }
 
         async function enviarDatos() {
@@ -151,7 +195,7 @@
             const nueva = { 
                 nroFactura: document.getElementById('nroFactura').value, 
                 proveedor: document.getElementById('proveedor').value, 
-                descripcion: `Resp: ${usuarioActual} | ${document.getElementById('descripcion').value} [${ts}]`, 
+                descripcion: `Resp: ${usuarioActual} | [${ts}]`, 
                 precio: "0" 
             };
             btn.innerText = "ESPERE...";
@@ -159,50 +203,8 @@
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(nueva) });
                 facturasSesionActual.push(nueva);
                 limpiarForm(); await cargarHistorial();
-                if (modoRafaga) startScanner('registro');
-            } catch (e) { alert("Error al guardar"); }
-            finally { btn.innerText = "GUARDAR"; validarForm(); }
-        }
-
-        // --- Funciones de visualización e impresión (Optimizadas) ---
-        function renderizarLista(datos) {
-            facturasFiltradas = datos;
-            document.getElementById('listaFacturas').innerHTML = datos.slice(0, 10).map(f => `
-                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
-                        <p class="text-[7px] opacity-40 font-black tracking-widest uppercase">DETALLE</p>
-                    </div>
-                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
-                    <p class="text-[9px] opacity-40 mt-1 italic">${f.descripcion}</p>
-                </div>
-            `).join('');
-        }
-
-        function filtrarFacturas() {
-            const t = document.getElementById('busqueda').value.toLowerCase();
-            const btnImp = document.getElementById('btnImprimir');
-            if (t === "") {
-                btnImp.innerText = "🖨️ Imprimir Sesión";
-                renderizarLista(historialFacturas.slice().reverse().slice(0, 5));
-            } else {
-                const filtradas = historialFacturas.filter(f => 
-                    f.proveedor.toLowerCase().includes(t) || f.nroFactura.toString().includes(t) || f.descripcion.toLowerCase().includes(t)
-                ).reverse();
-                btnImp.innerText = "🖨️ Imprimir Búsqueda";
-                renderizarLista(filtradas);
-            }
-        }
-
-        function imprimirReporte() {
-            const t = document.getElementById('busqueda').value;
-            const datosAImprimir = t !== "" ? facturasFiltradas : facturasSesionActual;
-            if (datosAImprimir.length === 0) { alert("Sin datos para imprimir."); return; }
-
-            const ventana = window.open('', '', 'width=800,height=600');
-            ventana.document.write(`<html><head><title>Reporte</title><style>body{font-family:sans-serif;padding:30px;}h1{color:#3b82f6;border-bottom:2px solid #3b82f6;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:12px;}th{background:#f9fafb;}</style></head><body><h1>Reporte Arielcodex</h1><p>Operador: ${usuarioActual} | Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>N° Factura</th><th>Proveedor</th><th>Descripción</th></tr></thead><tbody>${datosAImprimir.map(f => `<tr><td>${f.nroFactura}</td><td>${f.proveedor}</td><td>${f.descripcion}</td></tr>`).join('')}</tbody></table></body></html>`);
-            ventana.document.close();
-            ventana.print();
+            } catch (e) { alert("Error"); }
+            finally { btn.innerText = "GUARDAR REGISTRO"; validarForm(); }
         }
 
         function startScanner(modo) {
@@ -217,21 +219,13 @@
             });
         }
 
-        function procesarIA(event) {
-            const file = event.target.files[0];
-            Tesseract.recognize(file, 'spa').then(({ data: { text } }) => {
-                const raw = text.toUpperCase();
-                let det = "";
-                [...new Set(historialFacturas.map(f => f.proveedor.toUpperCase()))].forEach(p => { if (raw.includes(p)) det = p; });
-                if (det) document.getElementById('proveedor').value = det;
-                validarForm();
-            });
+        function actualizarReloj() {
+            const ahora = new Date();
+            document.getElementById('fecha-dispositivo').innerText = ahora.toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
         }
-
         function validarForm() { const nro = document.getElementById('nroFactura').value.trim(); const prov = document.getElementById('proveedor').value.trim(); const btn = document.getElementById('btnEnviar'); btn.disabled = !(nro && prov); btn.classList.toggle('bg-green-500', !btn.disabled); }
-        function toggleRafaga() { modoRafaga = !modoRafaga; document.getElementById('btnRafaga').classList.toggle('btn-rafaga-on', modoRafaga); }
-        function limpiarForm() { ['nroFactura','proveedor','descripcion'].forEach(id => document.getElementById(id).value = ""); }
-        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+        function limpiarForm() { ['nroFactura','proveedor'].forEach(id => document.getElementById(id).value = ""); }
+        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
     </script>
 </body>
 </html>
