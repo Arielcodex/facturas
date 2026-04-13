@@ -3,57 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arielcodex - Admin Panel</title>
+    <title>Arielcodex - Asistente Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="apple-touch-icon" href="logo.png">
     <style>
         :root { --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
-        .dark-mode { --bg-color: #111827; --card-bg: #1f2937; --text-main: #f9fafb; }
+        .dark-mode { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; }
         body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; }
-        .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .loader { border-top-color: #3b82f6; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .factura-card { transition: all 0.2s ease; }
+        .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .btn-assist { transition: all 0.2s; }
+        .btn-assist:active { transform: scale(0.95); }
     </style>
 </head>
-<body class="p-4 pb-20">
+<body class="p-4 pb-24">
 
     <div class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-extrabold tracking-tight text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
-            <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors">
-                <span id="theme-icon">🌙</span>
-            </button>
+            <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.ai</span></h1>
+            <div class="flex gap-2">
+                <button onclick="compartirWhatsApp()" class="p-2 rounded-full bg-green-100 dark:bg-green-900 text-green-600">📲</button>
+                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌙</button>
+            </div>
         </div>
         
-        <div class="glass rounded-3xl p-6 shadow-xl mb-6 text-center">
-            <p class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-1">Registros Totales</p>
-            <div id="contador" class="text-5xl font-black text-blue-500">0</div>
+        <div class="glass rounded-3xl p-6 shadow-xl mb-6 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] uppercase font-bold text-gray-400">Asistente Activo</p>
+                <h2 class="text-sm font-semibold" id="asistente-msg">Listo para escanear</h2>
+            </div>
+            <div id="contador" class="text-4xl font-black text-blue-500">0</div>
         </div>
+
+        <div id="sugerencias" class="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+            </div>
 
         <div class="glass rounded-3xl p-6 shadow-xl space-y-4 mb-8">
-            <div id="reader" class="rounded-2xl overflow-hidden mb-2 bg-black"></div>
-            <button onclick="startScanner()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform">
-                📸 Escanear Código
-            </button>
-            <div class="space-y-3">
-                <input type="text" id="nroFactura" placeholder="N° de Factura / Comprobante" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="proveedor" placeholder="Proveedor / Empresa" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="descripcion" placeholder="Descripción adicional" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+            <div id="reader" class="rounded-2xl overflow-hidden bg-black"></div>
+            
+            <div class="flex gap-2">
+                <button onclick="startScanner()" class="flex-1 py-3 rounded-2xl bg-blue-600 text-white font-bold btn-assist">📸 Escanear</button>
+                <button onclick="startVoiceSearch()" class="px-4 rounded-2xl bg-gray-200 dark:bg-gray-700 btn-assist">🎤</button>
             </div>
-            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black shadow-lg hover:bg-green-600 transition-colors flex justify-center items-center">
-                GUARDAR REGISTRO
-            </button>
+
+            <div class="space-y-3">
+                <input type="text" id="nroFactura" placeholder="N° de Comprobante" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="proveedor" placeholder="Proveedor" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="descripcion" placeholder="Notas adicionales..." class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 outline-none">
+                
+                <label class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <span class="text-xs text-gray-500">📷 Adjuntar Foto del Documento</span>
+                    <input type="file" accept="image/*" capture="environment" class="hidden">
+                </label>
+            </div>
+            
+            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black shadow-lg hover:bg-green-600">GUARDAR EN CLOUD</button>
         </div>
 
-        <div class="space-y-4">
-            <h3 class="text-xs font-bold text-gray-500 uppercase ml-1">Historial de registros</h3>
-            <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por proveedor o N°..." class="w-full p-4 rounded-2xl glass border-none shadow-md focus:ring-2 focus:ring-blue-500 outline-none mb-4">
-            
-            <div id="listaFacturas" class="space-y-3">
-                </div>
+        <div class="relative">
+            <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar registros..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none">
         </div>
+
+        <div id="listaFacturas" class="mt-6 space-y-3"></div>
     </div>
 
     <script>
@@ -66,36 +77,41 @@
             try {
                 const response = await fetch(API_URL);
                 historialFacturas = await response.json();
-                historialFacturas.reverse(); 
+                historialFacturas.reverse();
                 renderizarLista(historialFacturas);
+                renderizarSugerencias();
                 document.getElementById('contador').innerText = historialFacturas.length;
-            } catch (e) { console.log("Error de conexión"); }
+            } catch (e) { document.getElementById('asistente-msg').innerText = "Modo Offline"; }
         }
 
-        function renderizarLista(datos) {
-            const lista = document.getElementById('listaFacturas');
-            lista.innerHTML = datos.map(f => `
-                <div class="factura-card glass p-4 rounded-2xl shadow-sm border-l-4 border-blue-500">
-                    <p class="font-bold text-sm text-blue-500">${f.proveedor || 'Sin Proveedor'}</p>
-                    <p class="text-xs text-gray-500 italic">Comprobante: ${f.nroFactura}</p>
-                    ${f.descripcion ? `<p class="text-[10px] text-gray-400 mt-1">${f.descripcion}</p>` : ''}
-                </div>
+        function renderizarSugerencias() {
+            const proveedores = [...new Set(historialFacturas.map(f => f.proveedor).filter(p => p))].slice(0, 5);
+            const div = document.getElementById('sugerencias');
+            div.innerHTML = proveedores.map(p => `
+                <button onclick="setProv('${p}')" class="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xs font-bold whitespace-nowrap">${p}</button>
             `).join('');
         }
 
-        function filtrarFacturas() {
-            const termino = document.getElementById('busqueda').value.toLowerCase();
-            const filtrados = historialFacturas.filter(f => 
-                (f.proveedor && f.proveedor.toLowerCase().includes(termino)) || 
-                (f.nroFactura && f.nroFactura.toString().includes(termino))
-            );
-            renderizarLista(filtrados);
+        function setProv(p) { document.getElementById('proveedor').value = p; }
+
+        function startVoiceSearch() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'es-ES';
+            recognition.start();
+            document.getElementById('asistente-msg').innerText = "Escuchando...";
+            
+            recognition.onresult = (event) => {
+                const voiceText = event.results[0][0].transcript;
+                document.getElementById('busqueda').value = voiceText;
+                filtrarFacturas();
+                document.getElementById('asistente-msg').innerText = "Filtrado por: " + voiceText;
+            };
         }
 
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+        function compartirWhatsApp() {
+            const hoy = historialFacturas.length;
+            const texto = encodeURIComponent(`*Resumen Arielcodex*\nHoy se procesaron ${hoy} registros en el sistema.`);
+            window.open(`https://wa.me/?text=${texto}`);
         }
 
         function startScanner() {
@@ -103,41 +119,55 @@
             html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
                 document.getElementById('nroFactura').value = text;
                 const existe = historialFacturas.find(f => f.nroFactura == text);
-                if(existe) document.getElementById('proveedor').value = existe.proveedor;
+                if(existe) {
+                    document.getElementById('proveedor').value = existe.proveedor;
+                    document.getElementById('asistente-msg').innerText = "¡Lo conozco! Es " + existe.proveedor;
+                }
                 html5QrCode.stop();
                 navigator.vibrate(100);
             });
         }
 
+        function renderizarLista(datos) {
+            const lista = document.getElementById('listaFacturas');
+            lista.innerHTML = datos.map(f => `
+                <div class="glass p-4 rounded-2xl shadow-sm border-l-4 border-blue-500 animate-fade-in">
+                    <p class="font-bold text-sm text-blue-500">${f.proveedor || 'S/P'}</p>
+                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
+                </div>
+            `).join('');
+        }
+
+        function filtrarFacturas() {
+            const t = document.getElementById('busqueda').value.toLowerCase();
+            renderizarLista(historialFacturas.filter(f => 
+                f.proveedor?.toLowerCase().includes(t) || f.nroFactura?.toString().includes(t)
+            ));
+        }
+
         async function enviarDatos() {
             const btn = document.getElementById('btnEnviar');
             const nro = document.getElementById('nroFactura').value;
-            
-            if(!nro) return alert("El N° de comprobante es obligatorio.");
-
-            const existe = historialFacturas.find(f => f.nroFactura == nro);
-            if (existe && !confirm(`⚠️ Ya existe el registro ${nro}. ¿Duplicar?`)) return;
+            if(!nro) return;
 
             btn.disabled = true;
-            btn.innerHTML = `<div class="loader rounded-full border-4 border-t-4 border-gray-200 h-6 w-6"></div>`;
-
-            const payload = {
-                nroFactura: nro,
-                proveedor: document.getElementById('proveedor').value,
-                descripcion: document.getElementById('descripcion').value,
-                precio: "0" // Enviamos 0 por defecto para no romper la planilla
-            };
+            btn.innerHTML = "Guardando...";
 
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                    nroFactura: nro,
+                    proveedor: document.getElementById('proveedor').value,
+                    descripcion: document.getElementById('descripcion').value,
+                    precio: "0"
+                })});
                 document.getElementById('nroFactura').value = "";
-                document.getElementById('proveedor').value = "";
-                document.getElementById('descripcion').value = "";
                 await cargarHistorial();
-                alert("✅ Registrado!");
-            } catch (error) { alert("Error al guardar"); }
+                alert("¡Guardado!");
+            } catch (e) { alert("Error"); }
             finally { btn.disabled = false; btn.innerHTML = "GUARDAR REGISTRO"; }
         }
+
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
     </script>
 </body>
 </html>
