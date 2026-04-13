@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arielcodex - Control de Facturas</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4 font-sans">
+
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 class="text-2xl font-bold text-center text-blue-600 mb-4">Arielcodex Facturas</h1>
+        
+        <div class="bg-blue-50 p-3 rounded-lg mb-6 text-center">
+            <span class="text-gray-600 text-sm block">Facturas cargadas hoy</span>
+            <span id="contador" class="text-3xl font-bold text-blue-700">0</span>
+        </div>
+
+        <div id="reader" class="mb-4 rounded-lg overflow-hidden border-2 border-dashed border-gray-300"></div>
+        <button onclick="startScanner()" class="w-full bg-orange-500 text-white py-2 rounded-lg mb-4 hover:bg-orange-600 font-bold">📸 Escanear Código</button>
+
+        <div class="space-y-4">
+            <input type="text" id="nroFactura" placeholder="Número de Factura" class="w-full p-2 border rounded">
+            <input type="text" id="proveedor" placeholder="Proveedor" class="w-full p-2 border rounded">
+            <input type="text" id="descripcion" placeholder="Descripción" class="w-full p-2 border rounded">
+            <input type="number" id="precio" placeholder="Precio" class="w-full p-2 border rounded">
+            
+            <button onclick="enviarDatos()" id="btnEnviar" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">Guardar en Google Sheets</button>
+        </div>
+
+        <div class="mt-8 border-t pt-4">
+            <input type="text" id="busqueda" placeholder="🔍 Buscar facturas..." class="w-full p-2 border rounded text-sm">
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxXxm95_QFJCqeyKuzlxS-A5gAilHOCIwpL1JaeHVbttEj_TlZyg3BRsOXOq2x5O_it5w/exec";
+        let facturasHoy = 0;
+
+        function startScanner() {
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    document.getElementById('nroFactura').value = decodedText;
+                    html5QrCode.stop();
+                    alert("Código detectado: " + decodedText);
+                }
+            );
+        }
+
+        async function enviarDatos() {
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.innerText = "Enviando...";
+
+            const datos = {
+                nroFactura: document.getElementById('nroFactura').value,
+                proveedor: document.getElementById('proveedor').value,
+                descripcion: document.getElementById('descripcion').value,
+                precio: document.getElementById('precio').value
+            };
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(datos)
+                });
+                
+                alert("¡Guardado con éxito!");
+                facturasHoy++;
+                document.getElementById('contador').innerText = facturasHoy;
+                limpiarFormulario();
+            } catch (error) {
+                alert("Error al guardar");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Guardar en Google Sheets";
+            }
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('nroFactura').value = "";
+            document.getElementById('proveedor').value = "";
+            document.getElementById('descripcion').value = "";
+            document.getElementById('precio').value = "";
+        }
+    </script>
+</body>
+</html>
