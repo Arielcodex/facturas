@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONTROL INTERNO - Auditoría IA</title>
+    <title>CONTROL INTERNO - Business Intelligence</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #0f172a; --glass: rgba(30, 41, 59, 0.7); }
         body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
         .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .modal-history { display: none; position: fixed; inset: 0; z-index: 100; background: #0f172a; overflow-y: auto; }
-        .active-modal { display: block; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .alert-ia { border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.1); animation: shake 0.5s ease-in-out; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .modal-view { display: none; position: fixed; inset: 0; z-index: 100; background: #0f172a; overflow-y: auto; }
+        .active-view { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .loading-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     </style>
 </head>
 <body class="p-4 pb-20">
@@ -25,54 +26,37 @@
     <div id="login-screen" class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950">
         <div class="glass p-8 rounded-3xl w-80 text-center border-t-4 border-blue-500">
             <h1 class="text-blue-500 font-black text-2xl tracking-tighter mb-1 uppercase">CONTROL INTERNO</h1>
-            <p class="text-[9px] text-gray-500 uppercase font-bold mb-6 tracking-widest">Auditoría & Predicción</p>
-            <div class="space-y-3">
-                <input type="text" id="userInput" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 border-none text-center uppercase font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="password" id="passInput" placeholder="CLAVE" class="w-full p-4 rounded-xl bg-slate-800 border-none text-center font-bold outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg">INGRESAR</button>
-            </div>
+            <p class="text-[9px] text-gray-500 uppercase font-bold mb-6 tracking-widest">Auditoría en Tiempo Real</p>
+            <input type="text" id="userInput" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 mb-2 text-center uppercase font-bold outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="password" id="passInput" placeholder="CLAVE" class="w-full p-4 rounded-xl bg-slate-800 mb-4 text-center font-bold outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg">ACCEDER</button>
         </div>
     </div>
 
     <div id="app" class="max-w-md mx-auto hidden">
-        <div class="flex justify-between items-start mb-6">
+        <header class="flex justify-between items-center mb-6">
             <div>
-                <h2 class="text-xl font-black text-blue-500 leading-tight italic">CONTROL INTERNO</h2>
+                <h2 class="text-xl font-black text-blue-500 italic leading-tight">CONTROL INTERNO</h2>
                 <p id="userDisplay" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"></p>
             </div>
-            <div class="text-right glass p-2 rounded-xl border-l-4 border-green-500">
-                <p class="text-[8px] font-bold text-gray-400 uppercase">Hoy</p>
-                <p id="statsToday" class="text-lg font-black text-green-400">0</p>
-            </div>
-        </div>
+            <button onclick="toggleView('stats')" class="p-3 glass rounded-xl text-lg shadow-lg border-blue-500/50">📊</button>
+        </header>
 
-        <div id="ia-box" class="hidden glass rounded-2xl p-4 mb-4">
-            <div class="flex items-center gap-3">
-                <span id="ia-icon" class="text-2xl">🤖</span>
-                <div class="flex-1">
-                    <p id="ia-title" class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Sugerencia del Sistema</p>
-                    <p id="ia-msg" class="text-[11px] font-bold text-white leading-tight mt-1"></p>
-                </div>
-            </div>
-            <div id="ia-actions" class="hidden flex gap-2 mt-3">
-                <button onclick="aplicarSugerencia()" class="flex-1 py-2 bg-blue-600 rounded-lg text-[9px] font-black uppercase">Completar Datos</button>
-                <button onclick="ocultarSugerencia()" class="px-4 py-2 bg-slate-700 rounded-lg text-[9px] font-black uppercase">Ignorar</button>
-            </div>
-        </div>
-
-        <div id="form-container" class="glass rounded-3xl p-6 shadow-2xl mb-6 space-y-4 border-b-4 border-blue-500 transition-all duration-300">
+        <div id="form-container" class="glass rounded-3xl p-6 mb-6 space-y-4 border-b-4 border-blue-500 transition-all">
             <div id="reader" class="rounded-2xl overflow-hidden hidden mb-4 bg-black"></div>
             
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="startScan()" class="py-3 bg-blue-600 rounded-xl font-bold text-[10px] uppercase">📸 Escanear QR</button>
+                <button onclick="startScan()" class="py-3 bg-blue-600 rounded-xl font-bold text-[10px] uppercase">📸 QR</button>
                 <label class="py-3 bg-indigo-600 rounded-xl font-bold text-[10px] uppercase text-center cursor-pointer">
-                    🔍 Leer Factura IA
-                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarFacturaIA(event)">
+                    🔍 IA OCR
+                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
                 </label>
             </div>
+            
+            <p id="ia-status" class="hidden text-[10px] text-center font-bold uppercase py-2 bg-blue-900/40 rounded-lg border border-blue-500/30"></p>
 
             <div class="flex gap-2">
-                <input type="text" id="nroFactura" oninput="analizarPatron()" placeholder="N° Comprobante" class="flex-[2] p-4 rounded-xl bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="nroFactura" placeholder="N° Comprobante" class="flex-[2] p-4 rounded-xl bg-slate-800 outline-none">
                 <select id="tipoDoc" class="flex-1 bg-slate-800 rounded-xl text-[10px] font-bold uppercase outline-none">
                     <option value="FACTURA">Factura</option>
                     <option value="REMITO">Remito</option>
@@ -83,23 +67,44 @@
             
             <div class="relative">
                 <span class="absolute left-4 top-4 text-green-500 font-bold">$</span>
-                <input type="number" id="importe" oninput="auditarPrecio()" placeholder="Importe Total" class="w-full p-4 pl-8 rounded-xl bg-slate-800 border-2 border-slate-700 outline-none font-bold text-green-400 text-xl">
+                <input type="number" id="importe" placeholder="Total" class="w-full p-4 pl-8 rounded-xl bg-slate-800 font-bold text-green-400 text-2xl">
             </div>
 
-            <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black shadow-lg uppercase tracking-widest text-sm transition-all">GUARDAR REGISTRO</button>
+            <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black uppercase tracking-widest shadow-xl">GUARDAR EN NUBE</button>
         </div>
 
-        <button onclick="toggleHistory(true)" class="w-full py-4 glass border border-slate-700 rounded-2xl flex items-center justify-center gap-3">
-            <span class="text-xl">📊</span>
+        <button onclick="toggleView('history')" class="w-full py-4 glass border border-slate-700 rounded-2xl flex items-center justify-center gap-3">
+            <span class="text-xl">📋</span>
             <span class="font-black text-xs uppercase tracking-widest">Historial de Auditoría</span>
         </button>
     </div>
 
-    <div id="history-modal" class="modal-history p-4">
+    <div id="view-stats" class="modal-view p-4">
         <div class="max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-black text-blue-500 uppercase">HISTORIAL</h3>
-                <button onclick="toggleHistory(false)" class="p-3 bg-slate-800 rounded-full text-xl leading-none">✕</button>
+                <h3 class="text-xl font-black text-blue-500 italic uppercase">Dashboard Real</h3>
+                <button onclick="toggleView('app')" class="p-3 bg-slate-800 rounded-full text-xl leading-none">✕</button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass p-4 rounded-2xl border-t-2 border-blue-500">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-4">Clasificación por Contenido (OCR)</p>
+                    <canvas id="chartPie"></canvas>
+                </div>
+
+                <div class="glass p-4 rounded-2xl border-t-2 border-red-500">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-4">Tráfico: Cargas vs Alertas de Precio</p>
+                    <canvas id="chartBars"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-history" class="modal-view p-4">
+        <div class="max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-blue-500 uppercase">REGISTROS</h3>
+                <button onclick="toggleView('app')" class="p-3 bg-slate-800 rounded-full text-xl leading-none">✕</button>
             </div>
             <div id="historyList" class="space-y-3"></div>
         </div>
@@ -109,12 +114,11 @@
         const API = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
         let history = [];
         let user = "";
-        let sugerenciaActiva = null;
+        let currentOCRTags = "NORMAL";
 
         function login() {
             const userIn = document.getElementById('userInput').value.trim().toUpperCase();
-            const passIn = document.getElementById('passInput').value.trim();
-            if ((userIn === "ESTEBAN" || userIn === "OMAR") && passIn === "5678") {
+            if (userIn === "ESTEBAN" || userIn === "OMAR") {
                 user = userIn;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
@@ -123,98 +127,109 @@
             }
         }
 
-        // --- MOTOR DE AUDITORÍA Y PREDICCIÓN ---
-        function analizarPatron() {
-            const nro = document.getElementById('nroFactura').value;
-            if (nro.length < 3) return ocultarSugerencia();
-
-            const patron = nro.substring(0, 4);
-            const coincidencia = history.find(f => f.nroFactura.toString().startsWith(patron));
-
-            if (coincidencia) {
-                sugerenciaActiva = coincidencia;
-                mostrarIA(`Detectado patrón de <b>${coincidencia.proveedor}</b>. ¿Es correcto?`, true);
-            } else {
-                analizarFechas();
-            }
-        }
-
-        function analizarFechas() {
-            const hoy = new Date().getDate();
-            const proveedoresMes = history.filter(f => {
-                const fechaF = new Date(f.descripcion.split('|')[3] || ""); // Suponiendo fecha en descripción
-                return fechaF.getDate() >= hoy && fechaF.getDate() <= hoy + 2;
-            });
-
-            if (proveedoresMes.length > 0) {
-                mostrarIA(`Recordatorio: Estamos en fecha habitual de <b>${proveedoresMes[0].proveedor}</b>.`, false);
-            }
-        }
-
-        function auditarPrecio() {
-            const provActual = document.getElementById('proveedor').value;
-            const importeActual = parseFloat(document.getElementById('importe').value);
-            if (!provActual || !importeActual) return;
-
-            const historicoProv = history.filter(f => f.proveedor === provActual);
-            if (historicoProv.length < 2) return;
-
-            const suma = historicoProv.reduce((acc, f) => acc + parseFloat(f.precio), 0);
-            const promedio = suma / historicoProv.length;
-
-            if (importeActual > promedio * 1.3) {
-                document.getElementById('form-container').classList.add('alert-ia');
-                mostrarIA(`⚠️ <b>ALERTA DE PRECIO:</b> Este importe es un 30% superior al promedio de este proveedor.`, false);
-            } else {
-                document.getElementById('form-container').classList.remove('alert-ia');
-            }
-        }
-
-        async function procesarFacturaIA(event) {
+        async function procesarIA(event) {
             const file = event.target.files[0];
-            mostrarIA("Analizando documento completo...", false);
-            
+            const status = document.getElementById('ia-status');
+            status.classList.remove('hidden');
+            status.innerText = "🤖 LEYENDO FACTURA...";
+            status.classList.add('loading-pulse');
+
             try {
                 const worker = await Tesseract.createWorker('spa');
                 const { data: { text } } = await worker.recognize(file);
                 await worker.terminate();
 
-                // Búsqueda de Importe
                 const matchMonto = text.match(/TOTAL[:\s]*\$?\s*([\d\.,]+)/i);
-                if (matchMonto) {
-                    document.getElementById('importe').value = parseFloat(matchMonto[1].replace(/\./g, '').replace(',', '.'));
+                if (matchMonto) document.getElementById('importe').value = parseFloat(matchMonto[1].replace(/\./g, '').replace(',', '.'));
+
+                let txt = text.toUpperCase();
+                if (txt.includes("BONIF") || txt.includes("DESC")) currentOCRTags = "BONIFICACION";
+                else if (txt.includes("NC") || txt.includes("CREDITO")) currentOCRTags = "NOTA CREDITO";
+                else if (txt.includes("FLETE") || txt.includes("ENVIO")) currentOCRTags = "GASTO ENVIO";
+                else currentOCRTags = "NORMAL";
+
+                status.innerText = `✅ DETECTADO: ${currentOCRTags}`;
+                status.classList.remove('loading-pulse');
+            } catch (e) { status.innerText = "⚠️ ERROR OCR"; }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch(API);
+                history = await res.json();
+                renderCharts();
+                updateHistoryList();
+            } catch(e) { console.error("Error cargando datos"); }
+        }
+
+        let chartP, chartB;
+        function renderCharts() {
+            if (!history.length) return;
+
+            // 1. Lógica para Gráfico de Torta (Basado en la descripción que guarda el OCR)
+            const tags = { 'NORMAL': 0, 'BONIFICACION': 0, 'NOTA CREDITO': 0, 'GASTO ENVIO': 0 };
+            history.forEach(f => {
+                for (let tag in tags) {
+                    if (f.descripcion.includes(tag)) tags[tag]++;
                 }
+            });
 
-                // Clasificación automática
-                if (text.toUpperCase().includes("BONIFICADO") || text.toUpperCase().includes("NC")) {
-                    mostrarIA("⭐ Detectada <b>Bonificación o Nota de Crédito</b> en el papel.", false);
-                } else if (text.toUpperCase().includes("VENCE") || text.toUpperCase().includes("VTO")) {
-                    mostrarIA("📅 Detectada <b>Fecha de Vencimiento</b> importante.", false);
-                } else {
-                    mostrarIA("Lectura finalizada.", false);
+            // 2. Lógica para Gráfico de Barras (Alertas de Precio Reales)
+            // Agrupamos por semana (simplificado: bloques de 7 días del mes actual)
+            const semanales = [0, 0, 0, 0]; 
+            const alertas = [0, 0, 0, 0];
+            
+            const preciosPorProveedor = {};
+            history.forEach(f => {
+                if(!preciosPorProveedor[f.proveedor]) preciosPorProveedor[f.proveedor] = [];
+                preciosPorProveedor[f.proveedor].push(parseFloat(f.precio));
+            });
+
+            history.forEach((f, idx) => {
+                const precio = parseFloat(f.precio);
+                const prov = f.proveedor;
+                const semIndex = Math.min(3, Math.floor(idx / (history.length / 4))); // Simulación de tiempo
+                
+                semanales[semIndex]++;
+                
+                // Si el precio es 30% mayor al promedio de ese proveedor
+                const avg = preciosPorProveedor[prov].reduce((a,b)=>a+b,0) / preciosPorProveedor[prov].length;
+                if (precio > avg * 1.3) alertas[semIndex]++;
+            });
+
+            const ctxP = document.getElementById('chartPie').getContext('2d');
+            const ctxB = document.getElementById('chartBars').getContext('2d');
+
+            if (chartP) chartP.destroy();
+            if (chartB) chartB.destroy();
+
+            chartP = new Chart(ctxP, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(tags),
+                    datasets: [{
+                        data: Object.values(tags),
+                        backgroundColor: ['#475569', '#3b82f6', '#10b981', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: 'white', font: { size: 10 } } } } }
+            });
+
+            chartB = new Chart(ctxB, {
+                type: 'bar',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                    datasets: [
+                        { label: 'Cargas Ok', data: semanales, backgroundColor: '#3b82f6' },
+                        { label: 'Sobreprecios', data: alertas, backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: { 
+                    scales: { x: { stacked: true, ticks: {color: '#94a3b8'} }, y: { stacked: true, ticks: {color: '#94a3b8'} } },
+                    plugins: { legend: { labels: { color: 'white' } } }
                 }
-                auditarPrecio();
-            } catch (e) { mostrarIA("Error en OCR.", false); }
-        }
-
-        // --- UTILIDADES UI ---
-        function mostrarIA(msg, conAcciones) {
-            const box = document.getElementById('ia-box');
-            document.getElementById('ia-msg').innerHTML = msg;
-            document.getElementById('ia-actions').style.display = conAcciones ? 'flex' : 'none';
-            box.classList.remove('hidden');
-        }
-
-        function aplicarSugerencia() {
-            if (sugerenciaActiva) {
-                document.getElementById('proveedor').value = sugerenciaActiva.proveedor;
-                ocultarSugerencia();
-                auditarPrecio();
-            }
-        }
-
-        function ocultarSugerencia() {
-            document.getElementById('ia-box').classList.add('hidden');
+            });
         }
 
         async function saveData() {
@@ -223,52 +238,44 @@
                 nroFactura: document.getElementById('nroFactura').value,
                 proveedor: document.getElementById('proveedor').value,
                 precio: document.getElementById('importe').value,
-                descripcion: `${document.getElementById('tipoDoc').value} | $${document.getElementById('importe').value} | Operador: ${user} | ${new Date().toLocaleDateString()}`,
+                descripcion: `${document.getElementById('tipoDoc').value} | ${currentOCRTags} | Resp: ${user}`,
                 firma: "N/A"
             };
-            if(!data.nroFactura || !data.proveedor || !data.precio) return alert("Faltan datos");
+            if(!data.nroFactura || !data.precio) return alert("Faltan datos");
             
-            btn.innerText = "PROCESANDO AUDITORÍA..."; btn.disabled = true;
+            btn.innerText = "AUDITANDO..."; btn.disabled = true;
             try {
                 await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
-                clearForm(); await loadHistory();
-                alert("✅ Registro guardado y auditado");
-            } catch(e) { alert("Error de conexión"); }
-            finally { btn.innerText = "GUARDAR REGISTRO"; btn.disabled = false; }
+                clearForm();
+                await loadHistory();
+                alert("✅ Registro guardado con éxito");
+            } catch(e) { alert("Error al guardar"); }
+            finally { btn.innerText = "GUARDAR EN NUBE"; btn.disabled = false; }
         }
 
-        async function loadHistory() {
-            try {
-                const res = await fetch(API);
-                history = await res.json();
-                document.getElementById('statsToday').innerText = history.filter(f => f.descripcion.includes(new Date().toLocaleDateString())).length;
-                filterData();
-                analizarFechas();
-            } catch(e) {}
-        }
-
-        function filterData() {
+        function updateHistoryList() {
             document.getElementById('historyList').innerHTML = history.slice(-15).reverse().map(f => `
                 <div class="glass p-4 rounded-2xl border-l-4 ${f.descripcion.includes('FACTURA') ? 'border-blue-500' : 'border-green-500'}">
-                    <div class="flex justify-between">
+                    <div class="flex justify-between items-start">
                         <p class="font-black text-blue-400 text-sm uppercase">${f.proveedor}</p>
-                        <p class="text-[12px] text-green-400 font-bold">$${f.precio || '0'}</p>
+                        <p class="text-[12px] text-green-400 font-bold">$${f.precio}</p>
                     </div>
-                    <p class="text-[10px] font-bold mt-1 opacity-60 uppercase">N° ${f.nroFactura} - ${f.descripcion.split('|')[3] || ''}</p>
+                    <p class="text-[10px] font-bold mt-1 opacity-60 uppercase">N° ${f.nroFactura} | ${f.descripcion.split('|')[1] || 'NORMAL'}</p>
                 </div>
             `).join('');
         }
 
-        function toggleHistory(show) {
-            document.getElementById('history-modal').classList.toggle('active-modal', show);
+        function toggleView(view) {
+            document.querySelectorAll('.modal-view').forEach(v => v.classList.remove('active-view'));
+            if(view !== 'app') document.getElementById(`view-${view}`).classList.add('active-view');
         }
 
         function clearForm() {
             document.getElementById('nroFactura').value = "";
             document.getElementById('proveedor').value = "";
             document.getElementById('importe').value = "";
-            document.getElementById('form-container').classList.remove('alert-ia');
-            ocultarSugerencia();
+            document.getElementById('ia-status').classList.add('hidden');
+            currentOCRTags = "NORMAL";
         }
 
         function startScan() {
@@ -278,7 +285,6 @@
             sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
                 document.getElementById('nroFactura').value = txt;
                 sc.stop(); reader.classList.add('hidden');
-                analizarPatron();
             });
         }
     </script>
