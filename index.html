@@ -2,230 +2,313 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arielcodex - Reportes Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arielcodex PRO v4.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        :root { --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
-        .dark-mode { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; }
-        body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; font-family: sans-serif; }
-        .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        #app-content { display: none; }
-        #login-screen { display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; z-index: 50; background: #0f172a; }
+        :root { --bg: #0f172a; --glass: rgba(30, 41, 59, 0.7); }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        #signature-pad { border: 2px dashed #3b82f6; background: white; cursor: crosshair; touch-action: none; }
+        .offline-badge { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
 </head>
-<body class="p-4 pb-24">
+<body class="p-4 pb-20">
 
-    <div id="login-screen">
-        <div class="glass p-8 rounded-3xl shadow-2xl w-80 text-center border-t-4 border-blue-500">
-            <h2 class="text-blue-500 font-black text-2xl tracking-tighter mb-2">ARIELCODEX<span class="text-white font-light">.sys</span></h2>
-            <input type="text" id="passInput" placeholder="Operador..." class="w-full p-4 rounded-xl bg-gray-800 text-white outline-none focus:ring-2 focus:ring-blue-500 text-center mb-4 uppercase">
-            <button onclick="validarAcceso()" class="w-full py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg">INGRESAR</button>
-            <p id="errorLogin" class="text-red-500 text-[10px] mt-4 font-bold hidden uppercase">Usuario no autorizado</p>
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950">
+        <div class="glass p-8 rounded-3xl w-80 text-center border-t-4 border-blue-500">
+            <h1 class="text-blue-500 font-black text-3xl tracking-tighter mb-2">ARIELCODEX</h1>
+            <p class="text-[9px] text-gray-500 uppercase font-bold mb-6 tracking-widest">Acceso Privado</p>
+            <div class="space-y-3">
+                <input type="text" id="userInput" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 border-none text-center uppercase font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="passInput" placeholder="CLAVE" class="w-full p-4 rounded-xl bg-slate-800 border-none text-center font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg hover:bg-blue-500 transition-all">INGRESAR</button>
+            </div>
+            <p id="errorLogin" class="hidden text-red-500 text-[10px] mt-4 font-bold uppercase italic">Credenciales incorrectas</p>
         </div>
     </div>
 
-    <div id="app-content" class="max-w-md mx-auto">
-        <div class="flex justify-between items-center mb-6">
+    <div id="app" class="max-w-md mx-auto hidden">
+        
+        <div class="flex justify-between items-start mb-6">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
-                <p id="fecha-dispositivo" class="text-[10px] font-bold opacity-50 uppercase"></p>
+                <h2 class="text-xl font-black text-blue-500">ARIELCODEX.sys</h2>
+                <p id="userDisplay" class="text-[10px] font-bold opacity-60 uppercase tracking-widest"></p>
             </div>
-            <button onclick="cerrarSesion()" class="p-2 rounded-full bg-red-100 text-red-600 text-[10px] font-black uppercase">Salir</button>
+            <div class="text-right glass p-2 rounded-xl border-l-4 border-green-500">
+                <p class="text-[8px] font-bold text-gray-400 uppercase">Hoy</p>
+                <p id="statsToday" class="text-lg font-black text-green-400">0</p>
+            </div>
         </div>
 
-        <div class="glass rounded-3xl p-6 shadow-xl space-y-4 mb-8">
-            <div id="reader" class="rounded-2xl overflow-hidden bg-black mb-2 hidden"></div>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="startScanner('registro')" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear</button>
-                <label class="py-3 rounded-2xl bg-indigo-600 text-white font-bold text-[10px] text-center cursor-pointer uppercase">
-                    📄 Foto
-                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
-                </label>
+        <div id="offlineSync" class="hidden mb-4 p-3 bg-orange-500 rounded-2xl text-center font-black text-[10px] offline-badge cursor-pointer" onclick="syncOfflineData()">
+            ⚠️ TIENES REGISTROS SIN SUBIR (TOCA PARA SINCRONIZAR)
+        </div>
+
+        <div class="glass rounded-3xl p-6 shadow-2xl mb-6 space-y-4 border-b-4 border-blue-500">
+            <div id="reader" class="rounded-2xl overflow-hidden hidden mb-4 bg-black"></div>
+            
+            <div class="flex gap-2">
+                <button onclick="startScan()" class="flex-1 py-3 bg-blue-600 rounded-xl font-bold text-[10px] uppercase">📸 Escanear QR</button>
+                <select id="tipoDoc" class="bg-slate-800 rounded-xl px-2 text-[10px] font-bold uppercase outline-none">
+                    <option value="FACTURA">Factura</option>
+                    <option value="REMITO">Remito</option>
+                    <option value="NC">Nota Crédito</option>
+                </select>
             </div>
-            <div class="space-y-3 pt-2">
-                <input type="text" id="nroFactura" oninput="validarForm()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
-                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
+
+            <div class="relative">
+                <input type="text" id="nroFactura" oninput="checkDuplicate()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <p id="dupAlert" class="hidden text-[9px] text-red-500 font-bold mt-1 uppercase">⚠️ Ya cargado por un operador</p>
             </div>
-            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg" disabled>GUARDAR REGISTRO</button>
+
+            <input type="text" id="proveedor" placeholder="Droguería / Proveedor" class="w-full p-4 rounded-xl bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+            
+            <div class="space-y-2">
+                <p class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Firma de conformidad:</p>
+                <canvas id="signature-pad" class="w-full h-32 rounded-xl"></canvas>
+                <button onclick="clearSignature()" class="text-[8px] text-gray-500 uppercase font-bold underline">Limpiar firma</button>
+            </div>
+
+            <button id="btnSave" onclick="saveData()" class="w-full py-4 bg-slate-700 rounded-2xl font-black transition-all">GUARDAR REGISTRO</button>
         </div>
 
         <div class="space-y-4">
-            <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por fecha, N° o Droguería..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none">
+            <input type="text" id="search" oninput="filterData()" placeholder="🔍 Buscar registros o fechas..." class="w-full p-4 rounded-2xl glass outline-none focus:ring-2 focus:ring-blue-500">
             
-            <div class="flex flex-wrap gap-2 px-2">
-                <button onclick="compartirReporte('whatsapp')" class="flex-grow py-2 bg-green-500 text-white text-[10px] font-black rounded-lg uppercase shadow-sm">🟢 WhatsApp PDF</button>
-                <button onclick="compartirReporte('mail')" class="flex-grow py-2 bg-blue-500 text-white text-[10px] font-black rounded-lg uppercase shadow-sm">🔵 Mail PDF</button>
+            <div class="flex gap-2">
+                <button onclick="generateReport('whatsapp')" class="flex-1 py-3 bg-green-600 rounded-xl text-[10px] font-black uppercase shadow-lg">WhatsApp PDF</button>
+                <button onclick="generateReport('email')" class="flex-1 py-3 bg-indigo-600 rounded-xl text-[10px] font-black uppercase shadow-lg">Email PDF</button>
             </div>
 
-            <div id="listaFacturas" class="space-y-3"></div>
+            <div id="historyList" class="space-y-3"></div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
-        let historialFacturas = [];
-        let facturasSesionActual = [];
-        let facturasFiltradas = [];
-        let usuarioActual = "";
+        // RECUERDA CAMBIAR ESTA URL POR LA TUYA DE GOOGLE APPS SCRIPT
+        const API = "TU_URL_DE_GOOGLE_APPS_SCRIPT";
+        
+        let history = [];
+        let sessionData = [];
+        let user = "";
+        let coords = { lat: 0, lon: 0 };
 
-        window.onload = () => {
-            const guardado = sessionStorage.getItem('arielcodex_user');
-            if(guardado) accesoConcedido(guardado);
-            actualizarReloj();
-            setInterval(actualizarReloj, 1000);
-        };
+        // --- LOGIN CON CLAVE 5678 ---
+        function login() {
+            const userIn = document.getElementById('userInput').value.trim().toUpperCase();
+            const passIn = document.getElementById('passInput').value.trim();
+            const errorMsg = document.getElementById('errorLogin');
 
-        function validarAcceso() {
-            const input = document.getElementById('passInput').value.trim().toUpperCase();
-            if (input === "ESTEBAN" || input === "OMAR") accesoConcedido(input);
-            else document.getElementById('errorLogin').classList.remove('hidden');
+            if ((userIn === "ESTEBAN" || userIn === "OMAR") && passIn === "5678") {
+                user = userIn;
+                sessionStorage.setItem('arielcodex_user', user); 
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                document.getElementById('userDisplay').innerText = `OPERADOR: ${user}`;
+                
+                initGeo();
+                initSignature();
+                loadHistory();
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('passInput').value = "";
+                setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+            }
         }
 
-        function accesoConcedido(user) {
-            usuarioActual = user;
-            sessionStorage.setItem('arielcodex_user', user);
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-content').style.display = 'block';
-            cargarHistorial();
+        // --- GEOLOCALIZACIÓN ---
+        function initGeo() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(p => {
+                    coords.lat = p.coords.latitude;
+                    coords.lon = p.coords.longitude;
+                }, () => console.log("GPS Desactivado"));
+            }
         }
 
-        async function cargarHistorial() {
+        // --- FIRMA DIGITAL ---
+        let canvas, ctx, drawing = false;
+        function initSignature() {
+            canvas = document.getElementById('signature-pad');
+            ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const start = (e) => { drawing = true; ctx.beginPath(); draw(e); };
+            const end = () => { drawing = false; };
+            const move = (e) => { if(drawing) draw(e); };
+
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            canvas.addEventListener('mouseup', end);
+            canvas.addEventListener('touchstart', (e) => { start(e.touches[0]); e.preventDefault(); });
+            canvas.addEventListener('touchmove', (e) => { move(e.touches[0]); e.preventDefault(); });
+            canvas.addEventListener('touchend', end);
+        }
+
+        function draw(e) {
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000';
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function clearSignature() { ctx.clearRect(0,0,canvas.width,canvas.height); }
+
+        // --- MANEJO DE DATOS ---
+        async function loadHistory() {
             try {
-                const res = await fetch(API_URL);
-                historialFacturas = await res.json();
-                filtrarFacturas();
-            } catch (e) { console.error(e); }
+                const res = await fetch(API);
+                history = await res.json();
+                updateStats();
+                filterData();
+            } catch(e) { console.log("Modo consulta offline activado"); }
         }
 
-        // --- LÓGICA DE GENERACIÓN Y ENVÍO DE PDF ---
-        async function generarPDF() {
+        function checkDuplicate() {
+            const nro = document.getElementById('nroFactura').value;
+            const exists = history.some(f => f.nroFactura.toString() === nro.toString());
+            document.getElementById('nroFactura').classList.toggle('ring-red-500', exists);
+            document.getElementById('nroFactura').classList.toggle('ring-2', exists);
+            document.getElementById('dupAlert').classList.toggle('hidden', !exists);
+        }
+
+        async function saveData() {
+            const btn = document.getElementById('btnSave');
+            const data = {
+                nroFactura: document.getElementById('nroFactura').value,
+                proveedor: document.getElementById('proveedor').value,
+                descripcion: `${document.getElementById('tipoDoc').value} | Resp: ${user} | GPS: ${coords.lat},${coords.lon}`,
+                precio: "0",
+                firma: canvas.toDataURL()
+            };
+
+            if(!data.nroFactura || !data.proveedor) return alert("Faltan datos");
+
+            btn.innerText = "ENVIANDO...";
+            btn.disabled = true;
+
+            try {
+                await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                sessionData.push(data);
+                clearForm();
+                await loadHistory();
+            } catch(e) {
+                saveOffline(data);
+            } finally { 
+                btn.innerText = "GUARDAR REGISTRO"; 
+                btn.disabled = false;
+            }
+        }
+
+        // --- OFFLINE & SYNC ---
+        function saveOffline(data) {
+            let offline = JSON.parse(localStorage.getItem('ariel_off') || "[]");
+            offline.push(data);
+            localStorage.setItem('ariel_off', JSON.stringify(offline));
+            document.getElementById('offlineSync').classList.remove('hidden');
+            alert("⚠️ Sin conexión. Guardado en memoria local.");
+            clearForm();
+        }
+
+        async function syncOfflineData() {
+            let offline = JSON.parse(localStorage.getItem('ariel_off') || "[]");
+            for(let item of offline) {
+                await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(item) });
+            }
+            localStorage.removeItem('ariel_off');
+            document.getElementById('offlineSync').classList.add('hidden');
+            await loadHistory();
+            alert("✅ ¡Registros sincronizados!");
+        }
+
+        // --- REPORTES PDF ---
+        async function generateReport(method) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            const busqueda = document.getElementById('busqueda').value;
-            const datos = busqueda !== "" ? facturasFiltradas : facturasSesionActual;
+            const busq = document.getElementById('search').value;
+            const source = busq ? history.filter(f => JSON.stringify(f).toLowerCase().includes(busq.toLowerCase())) : sessionData;
 
-            if (datos.length === 0) {
-                alert("No hay datos para generar el PDF.");
-                return null;
-            }
+            if(source.length === 0) return alert("Sin datos para el reporte");
 
-            // Diseño del PDF
-            doc.setFontSize(18);
-            doc.setTextColor(59, 130, 246);
-            doc.text("ARIELCODEX.sys - Reporte de Carga", 14, 20);
+            doc.setFontSize(20); doc.setTextColor(59, 130, 246);
+            doc.text("ARIELCODEX PRO REPORT", 14, 20);
             
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Operador: ${usuarioActual}`, 14, 30);
-            doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 35);
-            doc.text(`Filtro: ${busqueda || "Sesión Actual"}`, 14, 40);
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text(`Operador: ${user} | Fecha: ${new Date().toLocaleString()}`, 14, 30);
 
-            const filas = datos.map(f => [f.nroFactura, f.proveedor, f.descripcion]);
-            
             doc.autoTable({
-                startY: 45,
-                head: [['N° Factura', 'Proveedor', 'Detalles']],
-                body: filas,
-                headStyles: { fillColor: [59, 130, 246] },
+                startY: 35,
+                head: [['Comprobante', 'Proveedor', 'Detalle']],
+                body: source.map(f => [f.nroFactura, f.proveedor, f.descripcion]),
+                headStyles: { fillColor: [59, 130, 246] }
             });
 
-            return doc.output('blob');
-        }
+            // Si es sesión actual y hay firma, agregarla
+            if(!busq && canvas.toDataURL().length > 1000) {
+                doc.addPage();
+                doc.text("FIRMA DE CONFORMIDAD:", 14, 20);
+                doc.addImage(canvas.toDataURL(), 'PNG', 14, 30, 50, 25);
+            }
 
-        async function compartirReporte(metodo) {
-            const pdfBlob = await generarPDF();
-            if (!pdfBlob) return;
+            const blob = doc.output('blob');
+            const file = new File([blob], `Reporte_${user}.pdf`, { type: "application/pdf" });
 
-            const fechaStr = new Date().toLocaleDateString().replace(/\//g, '-');
-            const file = new File([pdfBlob], `Reporte_${usuarioActual}_${fechaStr}.pdf`, { type: 'application/pdf' });
-
-            // Intentar usar la API de compartir nativa (funciona en móviles)
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Reporte Arielcodex',
-                        text: `Envío reporte de facturas cargadas por ${usuarioActual}`
-                    });
-                } catch (err) { console.error("Error al compartir", err); }
+                await navigator.share({ files: [file], title: 'Reporte Arielcodex' });
             } else {
-                // Si no soporta compartir archivos (PC), descarga o abre mail
-                if (metodo === 'whatsapp') {
-                    alert("En PC se descargará el archivo. Adjúntalo manualmente en WhatsApp Web.");
-                    const url = URL.createObjectURL(pdfBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Reporte_${usuarioActual}.pdf`;
-                    a.click();
-                } else {
-                    window.location.href = `mailto:?subject=Reporte Arielcodex - ${usuarioActual}&body=Adjunto reporte de facturas.`;
-                }
+                doc.save(`Reporte_Arielcodex.pdf`);
             }
         }
 
-        // --- Funciones base ---
-        function filtrarFacturas() {
-            const t = document.getElementById('busqueda').value.toLowerCase();
-            if (t === "") renderizarLista(historialFacturas.slice().reverse().slice(0, 5));
-            else {
-                const f = historialFacturas.filter(x => JSON.stringify(x).toLowerCase().includes(t)).reverse();
-                renderizarLista(f);
-            }
+        // --- UTILIDADES ---
+        function updateStats() {
+            const hoy = new Date().toLocaleDateString();
+            const count = history.filter(f => f.descripcion.includes(hoy)).length;
+            document.getElementById('statsToday').innerText = count;
         }
 
-        function renderizarLista(datos) {
-            facturasFiltradas = datos;
-            document.getElementById('listaFacturas').innerHTML = datos.map(f => `
-                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
-                    <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
-                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
-                    <p class="text-[9px] opacity-40 italic">${f.descripcion}</p>
+        function filterData() {
+            const t = document.getElementById('search').value.toLowerCase();
+            const list = t === "" ? history.slice(-5).reverse() : history.filter(f => JSON.stringify(f).toLowerCase().includes(t)).reverse();
+            document.getElementById('historyList').innerHTML = list.map(f => `
+                <div class="glass p-4 rounded-2xl border-l-4 ${f.descripcion.includes('FACTURA') ? 'border-blue-500' : 'border-green-500'} shadow-md">
+                    <div class="flex justify-between items-start">
+                        <p class="font-black text-blue-400 text-sm uppercase">${f.proveedor}</p>
+                        <p class="text-[7px] opacity-40 uppercase font-black">${f.descripcion.split('|')[0]}</p>
+                    </div>
+                    <p class="text-xs font-bold mt-1">N° ${f.nroFactura}</p>
                 </div>
             `).join('');
         }
 
-        async function enviarDatos() {
-            const btn = document.getElementById('btnEnviar');
-            const ts = new Date().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-            const nueva = { 
-                nroFactura: document.getElementById('nroFactura').value, 
-                proveedor: document.getElementById('proveedor').value, 
-                descripcion: `Resp: ${usuarioActual} | [${ts}]`, 
-                precio: "0" 
-            };
-            btn.innerText = "ESPERE...";
-            try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(nueva) });
-                facturasSesionActual.push(nueva);
-                limpiarForm(); await cargarHistorial();
-            } catch (e) { alert("Error"); }
-            finally { btn.innerText = "GUARDAR REGISTRO"; validarForm(); }
+        function clearForm() {
+            document.getElementById('nroFactura').value = "";
+            document.getElementById('proveedor').value = "";
+            clearSignature();
+            checkDuplicate();
         }
 
-        function startScanner(modo) {
+        function startScan() {
             const reader = document.getElementById('reader');
             reader.classList.remove('hidden');
-            const scanner = new Html5Qrcode("reader");
-            scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
-                if(modo === 'registro') document.getElementById('nroFactura').value = text;
-                else { document.getElementById('busqueda').value = text; filtrarFacturas(); }
-                scanner.stop(); reader.classList.add('hidden');
-                validarForm();
+            const sc = new Html5Qrcode("reader");
+            sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                document.getElementById('nroFactura').value = txt;
+                sc.stop(); reader.classList.add('hidden');
+                checkDuplicate();
+                navigator.vibrate(100);
             });
         }
-
-        function actualizarReloj() {
-            const ahora = new Date();
-            document.getElementById('fecha-dispositivo').innerText = ahora.toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
-        }
-        function validarForm() { const nro = document.getElementById('nroFactura').value.trim(); const prov = document.getElementById('proveedor').value.trim(); const btn = document.getElementById('btnEnviar'); btn.disabled = !(nro && prov); btn.classList.toggle('bg-green-500', !btn.disabled); }
-        function limpiarForm() { ['nroFactura','proveedor'].forEach(id => document.getElementById(id).value = ""); }
-        function cerrarSesion() { sessionStorage.clear(); location.reload(); }
     </script>
 </body>
 </html>
