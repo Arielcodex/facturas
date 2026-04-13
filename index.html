@@ -3,56 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arielcodex - Ultra Admin</title>
+    <title>Arielcodex - Acceso Restringido</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root { --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
         .dark-mode { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; }
-        body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; }
+        body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; font-family: sans-serif; }
         .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .btn-rafaga-on { background: #ef4444; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .highlight-find { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        #app-content { display: none; } /* Oculto por defecto */
+        #login-screen { display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; z-index: 50; background: #0f172a; }
     </style>
 </head>
 <body class="p-4 pb-24">
 
-    <div class="max-w-md mx-auto">
+    <div id="login-screen">
+        <div class="glass p-8 rounded-3xl shadow-2xl w-80 text-center border-t-4 border-blue-500">
+            <h2 class="text-blue-500 font-black text-2xl tracking-tighter mb-2">ARIELCODEX<span class="text-white font-light">.sys</span></h2>
+            <p class="text-gray-400 text-[10px] uppercase font-bold mb-6 tracking-widest">Identificación de Usuario</p>
+            <input type="text" id="passInput" placeholder="Nombre de usuario..." class="w-full p-4 rounded-xl bg-gray-800 text-white outline-none focus:ring-2 focus:ring-blue-500 text-center mb-4 uppercase">
+            <button onclick="validarAcceso()" class="w-full py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg hover:bg-blue-500 transition-all">INGRESAR</button>
+            <p id="errorLogin" class="text-red-500 text-[10px] mt-4 font-bold hidden uppercase">Usuario no autorizado</p>
+        </div>
+    </div>
+
+    <div id="app-content" class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
-                <p id="fecha-actual" class="text-[10px] font-bold opacity-50 uppercase"></p>
+                <p id="fecha-dispositivo" class="text-[10px] font-bold opacity-50 uppercase"></p>
             </div>
-            <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌙</button>
+            <div class="flex gap-2">
+                <button onclick="cerrarSesion()" class="p-2 rounded-full bg-red-100 text-red-600 text-xs font-bold">SALIR</button>
+                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌙</button>
+            </div>
         </div>
-        
-        <div class="glass rounded-3xl p-5 shadow-xl mb-6 flex items-center gap-4 border-l-4 border-blue-500">
-            <div id="bot-status" class="text-3xl">🤖</div>
-            <div>
-                <p id="saludo-asistente" class="text-xs font-bold text-blue-500 uppercase">Sistema de Gestión</p>
-                <p id="mensaje-asistente" class="text-sm font-medium opacity-80">Podés buscar facturas escaneando el código.</p>
+
+        <div class="glass rounded-2xl p-4 mb-6 shadow-md border-b-4 border-blue-500 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">👤</span>
+                <div>
+                    <label class="text-[9px] font-black text-blue-500 uppercase tracking-widest">Operador Activo</label>
+                    <p id="displayUsuario" class="font-black text-lg leading-tight uppercase"></p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p id="reloj-mini" class="text-xs font-bold opacity-50"></p>
             </div>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-xl space-y-4 mb-8">
             <div id="reader" class="rounded-2xl overflow-hidden bg-black mb-2 hidden"></div>
-            
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="startScanner('registro')" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear Registro</button>
+                <button onclick="startScanner('registro')" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear</button>
                 <label class="py-3 rounded-2xl bg-indigo-600 text-white font-bold text-[10px] text-center cursor-pointer uppercase">
-                    📄 Leer Droguería
+                    📄 Leer Foto
                     <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
                 </label>
             </div>
-
             <div class="space-y-3 pt-2">
                 <input type="text" id="nroFactura" oninput="validarForm()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería / Proveedor" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
                 <input type="text" id="descripcion" placeholder="Notas..." class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
             </div>
-            
             <div class="flex gap-2">
                 <button onclick="enviarDatos()" id="btnEnviar" class="flex-grow py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg transition-all" disabled>GUARDAR</button>
                 <button id="btnRafaga" onclick="toggleRafaga()" class="px-4 rounded-2xl bg-gray-200 dark:bg-gray-700 text-lg shadow-md">🚀</button>
@@ -60,14 +74,13 @@
         </div>
 
         <div class="space-y-4">
-            <div class="flex gap-2">
-                <div class="relative flex-grow">
-                    <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por N° o Proveedor..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none pr-12">
-                    <button onclick="startScanner('busqueda')" class="absolute right-3 top-3 p-1.5 bg-blue-500 text-white rounded-xl shadow-lg active:scale-90 transition-transform">
-                        📷
-                    </button>
-                </div>
-                <button onclick="filtrarDroguerias()" class="px-4 rounded-2xl glass text-[10px] font-bold text-blue-500 uppercase shadow-sm">Droguerías</button>
+            <div class="relative">
+                <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar registros..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none pr-12">
+                <button onclick="startScanner('busqueda')" class="absolute right-3 top-3 p-1.5 bg-blue-500 text-white rounded-xl shadow-lg">📷</button>
+            </div>
+            <div class="flex items-center justify-between px-2">
+                <p id="label-lista" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registros</p>
+                <button onclick="imprimirReporte()" id="btnImprimir" class="px-3 py-1.5 bg-blue-500 text-white text-[10px] font-black rounded-lg shadow-md uppercase">🖨️ Imprimir</button>
             </div>
             <div id="listaFacturas" class="space-y-3"></div>
         </div>
@@ -76,87 +89,120 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
         let historialFacturas = [];
+        let facturasSesionActual = [];
+        let facturasFiltradas = [];
         let modoRafaga = false;
+        let usuarioActual = "";
 
-        window.onload = async () => {
-            configurarInterfaz();
-            await cargarHistorial();
+        // Al cargar, verificar si ya estaba logueado
+        window.onload = () => {
+            const guardado = sessionStorage.getItem('arielcodex_user');
+            if(guardado) {
+                accesoConcedido(guardado);
+            }
+            actualizarReloj();
+            setInterval(actualizarReloj, 1000);
         };
 
-        function configurarInterfaz() {
+        function validarAcceso() {
+            const input = document.getElementById('passInput').value.trim().toUpperCase();
+            if (input === "ESTEBAN" || input === "OMAR") {
+                accesoConcedido(input);
+            } else {
+                const err = document.getElementById('errorLogin');
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 2000);
+            }
+        }
+
+        function accesoConcedido(user) {
+            usuarioActual = user;
+            sessionStorage.setItem('arielcodex_user', user); // Dura mientras la pestaña esté abierta
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('displayUsuario').innerText = user;
+            cargarHistorial();
+        }
+
+        function cerrarSesion() {
+            sessionStorage.clear();
+            location.reload();
+        }
+
+        function actualizarReloj() {
             const ahora = new Date();
-            document.getElementById('fecha-actual').innerText = ahora.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
-            const hora = ahora.getHours();
-            document.getElementById('saludo-asistente').innerText = (hora < 12) ? "¡Buen día, Esteban!" : (hora < 20) ? "¡Buenas tardes, Esteban!" : "¡Buenas noches, Esteban!";
+            const ts = ahora.toLocaleString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+            const hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('fecha-dispositivo').innerText = ts;
+            if(document.getElementById('reloj-mini')) document.getElementById('reloj-mini').innerText = hora;
         }
 
         async function cargarHistorial() {
             try {
                 const res = await fetch(API_URL);
                 historialFacturas = await res.json();
-                renderizarLista(historialFacturas.slice().reverse());
-            } catch (e) { console.log("Error de red"); }
-        }
-
-        async function procesarIA(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            document.getElementById('bot-status').innerText = "🧠";
-            document.getElementById('mensaje-asistente').innerText = "Analizando droguería...";
-
-            Tesseract.recognize(file, 'spa').then(({ data: { text } }) => {
-                const rawText = text.toUpperCase();
-                let detectado = "";
-                const conocidos = [...new Set(historialFacturas.map(f => f.proveedor.toUpperCase()))];
-                conocidos.forEach(p => { if (rawText.includes(p)) detectado = p; });
-
-                if (!detectado) {
-                    const claves = ["DROGUERIA", "DROGUERÍAS", "LABORATORIO", "FARMACIA"];
-                    claves.forEach(c => {
-                        if (rawText.includes(c)) {
-                            const palabras = rawText.split(/\s+/);
-                            const idx = palabras.indexOf(c);
-                            detectado = c + " " + (palabras[idx+1] || "");
-                        }
-                    });
-                }
-
-                if (detectado) document.getElementById('proveedor').value = detectado;
-                document.getElementById('bot-status').innerText = "✅";
-                document.getElementById('mensaje-asistente').innerText = detectado ? "¡Droguería detectada!" : "No reconocido, cargalo manual.";
-                validarForm();
-            });
-        }
-
-        function validarForm() {
-            const nro = document.getElementById('nroFactura').value.trim();
-            const prov = document.getElementById('proveedor').value.trim();
-            const btn = document.getElementById('btnEnviar');
-            btn.disabled = !(nro && prov);
-            btn.classList.toggle('bg-green-500', !btn.disabled);
-            btn.classList.toggle('bg-gray-400', btn.disabled);
+                filtrarFacturas();
+            } catch (e) { console.error("Error de red"); }
         }
 
         async function enviarDatos() {
             const btn = document.getElementById('btnEnviar');
-            const ahora = new Date();
-            const fechaHora = ahora.toLocaleDateString('es-AR') + " " + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-            btn.innerText = "REGISTRANDO...";
-            btn.disabled = true;
-
+            const ts = new Date().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            const nueva = { 
+                nroFactura: document.getElementById('nroFactura').value, 
+                proveedor: document.getElementById('proveedor').value, 
+                descripcion: `Resp: ${usuarioActual} | ${document.getElementById('descripcion').value} [${ts}]`, 
+                precio: "0" 
+            };
+            btn.innerText = "ESPERE...";
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
-                    nroFactura: document.getElementById('nroFactura').value,
-                    proveedor: document.getElementById('proveedor').value,
-                    descripcion: document.getElementById('descripcion').value + ` (Cargado: ${fechaHora})`,
-                    precio: "0"
-                })});
-                limpiarForm();
-                await cargarHistorial();
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(nueva) });
+                facturasSesionActual.push(nueva);
+                limpiarForm(); await cargarHistorial();
                 if (modoRafaga) startScanner('registro');
-                else document.getElementById('mensaje-asistente').innerText = "✅ Registro exitoso.";
             } catch (e) { alert("Error al guardar"); }
-            finally { validarForm(); btn.innerText = "GUARDAR"; }
+            finally { btn.innerText = "GUARDAR"; validarForm(); }
+        }
+
+        // --- Funciones de visualización e impresión (Optimizadas) ---
+        function renderizarLista(datos) {
+            facturasFiltradas = datos;
+            document.getElementById('listaFacturas').innerHTML = datos.slice(0, 10).map(f => `
+                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
+                        <p class="text-[7px] opacity-40 font-black tracking-widest uppercase">DETALLE</p>
+                    </div>
+                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
+                    <p class="text-[9px] opacity-40 mt-1 italic">${f.descripcion}</p>
+                </div>
+            `).join('');
+        }
+
+        function filtrarFacturas() {
+            const t = document.getElementById('busqueda').value.toLowerCase();
+            const btnImp = document.getElementById('btnImprimir');
+            if (t === "") {
+                btnImp.innerText = "🖨️ Imprimir Sesión";
+                renderizarLista(historialFacturas.slice().reverse().slice(0, 5));
+            } else {
+                const filtradas = historialFacturas.filter(f => 
+                    f.proveedor.toLowerCase().includes(t) || f.nroFactura.toString().includes(t) || f.descripcion.toLowerCase().includes(t)
+                ).reverse();
+                btnImp.innerText = "🖨️ Imprimir Búsqueda";
+                renderizarLista(filtradas);
+            }
+        }
+
+        function imprimirReporte() {
+            const t = document.getElementById('busqueda').value;
+            const datosAImprimir = t !== "" ? facturasFiltradas : facturasSesionActual;
+            if (datosAImprimir.length === 0) { alert("Sin datos para imprimir."); return; }
+
+            const ventana = window.open('', '', 'width=800,height=600');
+            ventana.document.write(`<html><head><title>Reporte</title><style>body{font-family:sans-serif;padding:30px;}h1{color:#3b82f6;border-bottom:2px solid #3b82f6;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:12px;}th{background:#f9fafb;}</style></head><body><h1>Reporte Arielcodex</h1><p>Operador: ${usuarioActual} | Fecha: ${new Date().toLocaleString()}</p><table><thead><tr><th>N° Factura</th><th>Proveedor</th><th>Descripción</th></tr></thead><tbody>${datosAImprimir.map(f => `<tr><td>${f.nroFactura}</td><td>${f.proveedor}</td><td>${f.descripcion}</td></tr>`).join('')}</tbody></table></body></html>`);
+            ventana.document.close();
+            ventana.print();
         }
 
         function startScanner(modo) {
@@ -164,58 +210,27 @@
             reader.classList.remove('hidden');
             const scanner = new Html5Qrcode("reader");
             scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
-                if(modo === 'registro') {
-                    document.getElementById('nroFactura').value = text;
-                    const conocido = historialFacturas.find(f => f.nroFactura == text);
-                    if(conocido) document.getElementById('proveedor').value = conocido.proveedor;
-                } else {
-                    document.getElementById('busqueda').value = text;
-                    filtrarFacturas();
-                    document.getElementById('mensaje-asistente').innerText = "🔎 Buscando código: " + text;
-                }
-                scanner.stop();
-                reader.classList.add('hidden');
+                if(modo === 'registro') document.getElementById('nroFactura').value = text;
+                else { document.getElementById('busqueda').value = text; filtrarFacturas(); }
+                scanner.stop(); reader.classList.add('hidden');
                 validarForm();
-                navigator.vibrate(100);
             });
         }
 
-        function renderizarLista(datos) {
-            document.getElementById('listaFacturas').innerHTML = datos.slice(0,10).map(f => `
-                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm animate-fade-in">
-                    <div class="flex justify-between items-start">
-                        <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
-                        <p class="text-[9px] opacity-40 uppercase font-black">Historial</p>
-                    </div>
-                    <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
-                </div>
-            `).join('');
+        function procesarIA(event) {
+            const file = event.target.files[0];
+            Tesseract.recognize(file, 'spa').then(({ data: { text } }) => {
+                const raw = text.toUpperCase();
+                let det = "";
+                [...new Set(historialFacturas.map(f => f.proveedor.toUpperCase()))].forEach(p => { if (raw.includes(p)) det = p; });
+                if (det) document.getElementById('proveedor').value = det;
+                validarForm();
+            });
         }
 
-        function filtrarFacturas() {
-            const t = document.getElementById('busqueda').value.toLowerCase();
-            const filtradas = historialFacturas.filter(f => 
-                f.proveedor.toLowerCase().includes(t) || 
-                f.nroFactura.toString().includes(t)
-            );
-            renderizarLista(filtradas.slice().reverse());
-        }
-
-        function filtrarDroguerias() {
-            document.getElementById('busqueda').value = "Drogueria";
-            filtrarFacturas();
-        }
-
-        function toggleRafaga() {
-            modoRafaga = !modoRafaga;
-            document.getElementById('btnRafaga').classList.toggle('btn-rafaga-on', modoRafaga);
-            document.getElementById('mensaje-asistente').innerText = modoRafaga ? "🚀 Modo ráfaga: Escáner automático activo." : "Modo normal.";
-        }
-
-        function limpiarForm() {
-            ['nroFactura','proveedor','descripcion'].forEach(id => document.getElementById(id).value = "");
-        }
-
+        function validarForm() { const nro = document.getElementById('nroFactura').value.trim(); const prov = document.getElementById('proveedor').value.trim(); const btn = document.getElementById('btnEnviar'); btn.disabled = !(nro && prov); btn.classList.toggle('bg-green-500', !btn.disabled); }
+        function toggleRafaga() { modoRafaga = !modoRafaga; document.getElementById('btnRafaga').classList.toggle('btn-rafaga-on', modoRafaga); }
+        function limpiarForm() { ['nroFactura','proveedor','descripcion'].forEach(id => document.getElementById(id).value = ""); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
     </script>
 </body>
