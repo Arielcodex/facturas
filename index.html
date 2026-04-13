@@ -14,9 +14,11 @@
         .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .loader { border-top-color: #3b82f6; animation: spinner 1.5s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .factura-card { transition: all 0.2s ease; }
+        .factura-card:hover { transform: translateY(-2px); }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 pb-20">
 
     <div class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-6">
@@ -30,7 +32,7 @@
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <p class="text-xs uppercase tracking-widest text-gray-500 font-bold">Base de Datos</p>
-                    <h2 class="text-sm text-gray-400">Total de facturas cargadas</h2>
+                    <h2 class="text-sm text-gray-400">Total cargado</h2>
                 </div>
                 <div id="contador" class="text-4xl font-black text-blue-500">0</div>
             </div>
@@ -39,30 +41,28 @@
             </div>
         </div>
 
-        <div class="glass rounded-3xl p-6 shadow-xl space-y-4">
+        <div class="glass rounded-3xl p-6 shadow-xl space-y-4 mb-8">
             <div id="reader" class="rounded-2xl overflow-hidden mb-2 bg-black"></div>
-            
-            <button onclick="startScanner()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <button onclick="startScanner()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform">
                 📸 Escanear Código
             </button>
-
             <div class="space-y-3">
                 <input type="text" id="nroFactura" placeholder="N° de Factura" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="proveedor" placeholder="Proveedor / Empresa" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="descripcion" placeholder="Descripción breve" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <div class="relative">
-                    <span class="absolute left-4 top-4 text-green-500 font-bold">$</span>
-                    <input type="number" id="precio" placeholder="0.00" class="w-full p-4 pl-8 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-semibold text-green-500">
-                </div>
+                <input type="text" id="proveedor" placeholder="Proveedor" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="descripcion" placeholder="Descripción" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="number" id="precio" placeholder="Precio $" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-green-500 font-bold">
             </div>
-            
-            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black text-lg shadow-lg hover:bg-green-600 transition-colors flex justify-center items-center">
+            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black shadow-lg hover:bg-green-600 transition-colors flex justify-center items-center">
                 GUARDAR REGISTRO
             </button>
         </div>
 
-        <div class="mt-6">
-            <input type="text" id="busqueda" placeholder="🔍 Buscar facturas..." class="w-full p-4 bg-transparent border-b-2 border-gray-300 dark:border-gray-700 focus:border-blue-500 outline-none">
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold text-gray-500 uppercase ml-1">Historial Reciente</h3>
+            <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por proveedor o N°..." class="w-full p-4 rounded-2xl glass border-none shadow-md focus:ring-2 focus:ring-blue-500 outline-none mb-4">
+            
+            <div id="listaFacturas" class="space-y-3">
+                </div>
         </div>
     </div>
 
@@ -70,20 +70,42 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
         let historialFacturas = [];
 
-        // Función para cargar el historial al abrir la app
+        window.onload = cargarHistorial;
+
         async function cargarHistorial() {
             try {
                 const response = await fetch(API_URL);
                 historialFacturas = await response.json();
+                historialFacturas.reverse(); // Mostrar las últimas primero
+                renderizarLista(historialFacturas);
                 document.getElementById('contador').innerText = historialFacturas.length;
                 document.getElementById('progress-bar').style.width = Math.min(historialFacturas.length * 2, 100) + '%';
-            } catch (e) { 
-                console.log("Error cargando historial"); 
-            }
+            } catch (e) { console.log("Error de conexión"); }
         }
 
-        // Llamar al cargar cuando abre la app
-        window.onload = cargarHistorial;
+        function renderizarLista(datos) {
+            const lista = document.getElementById('listaFacturas');
+            lista.innerHTML = datos.map(f => `
+                <div class="factura-card glass p-4 rounded-2xl shadow-sm border-l-4 border-blue-500 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-sm">${f.proveedor || 'Sin Proveedor'}</p>
+                        <p class="text-xs text-gray-500 italic">N°: ${f.nroFactura}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-green-500 font-black">$${f.precio || '0'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filtrarFacturas() {
+            const termino = document.getElementById('busqueda').value.toLowerCase();
+            const filtrados = historialFacturas.filter(f => 
+                (f.proveedor && f.proveedor.toLowerCase().includes(termino)) || 
+                (f.nroFactura && f.nroFactura.toString().includes(termino))
+            );
+            renderizarLista(filtrados);
+        }
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -95,6 +117,8 @@
             const html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
                 document.getElementById('nroFactura').value = text;
+                const existe = historialFacturas.find(f => f.nroFactura == text);
+                if(existe) document.getElementById('proveedor').value = existe.proveedor;
                 html5QrCode.stop();
                 navigator.vibrate(100);
             });
@@ -103,54 +127,30 @@
         async function enviarDatos() {
             const btn = document.getElementById('btnEnviar');
             const nro = document.getElementById('nroFactura').value;
-            const prov = document.getElementById('proveedor').value;
-            const desc = document.getElementById('descripcion').value;
-            const precio = document.getElementById('precio').value;
+            
+            if(!nro || !document.getElementById('precio').value) return alert("Completa los campos obligatorios.");
 
-            if(!nro || !precio) {
-                alert("N° de factura y Precio son obligatorios.");
-                return;
-            }
-
-            // --- ALERTA DE DUPLICADOS ---
             const existe = historialFacturas.find(f => f.nroFactura == nro);
-            if (existe) {
-                alert("⚠️ ATENCIÓN: Esta factura ya fue cargada anteriormente para el proveedor: " + existe.proveedor);
-                if (!confirm("¿Deseas cargarla de todas formas?")) return;
-            }
+            if (existe && !confirm(`⚠️ Ya existe la factura ${nro}. ¿Duplicar?`)) return;
 
             btn.disabled = true;
-            btn.innerHTML = `<div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-6 w-6"></div>`;
+            btn.innerHTML = `<div class="loader rounded-full border-4 border-t-4 border-gray-200 h-6 w-6"></div>`;
 
             const payload = {
                 nroFactura: nro,
-                proveedor: prov,
-                descripcion: desc,
-                precio: precio
+                proveedor: document.getElementById('proveedor').value,
+                descripcion: document.getElementById('descripcion').value,
+                precio: document.getElementById('precio').value
             };
 
             try {
-                await fetch(API_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify(payload) 
-                });
-                
-                alert("✅ ¡Factura guardada exitosamente!");
-                limpiarFormulario();
-                await cargarHistorial(); // Refrescar historial local y contador
-            } catch (error) {
-                alert("❌ Error al guardar. Verifica tu conexión.");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "GUARDAR REGISTRO";
-            }
-        }
-
-        function limpiarFormulario() {
-            ['nroFactura','proveedor','descripcion','precio'].forEach(id => {
-                document.getElementById(id).value = "";
-            });
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                document.getElementById('nroFactura').value = "";
+                document.getElementById('precio').value = "";
+                await cargarHistorial();
+                alert("✅ Guardado!");
+            } catch (error) { alert("Error al guardar"); }
+            finally { btn.disabled = false; btn.innerHTML = "GUARDAR REGISTRO"; }
         }
     </script>
 </body>
