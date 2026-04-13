@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arielcodex - IA Aprendizaje</title>
+    <title>Arielcodex - Ultra Admin</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -12,23 +12,27 @@
         .dark-mode { --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; }
         body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; }
         .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .loader-ia { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn-rafaga-on { background: #ef4444; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .highlight-find { border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
     </style>
 </head>
 <body class="p-4 pb-24">
 
     <div class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter text-blue-500">ARIELCODEX<span class="text-gray-400 font-light">.sys</span></h1>
+                <p id="fecha-actual" class="text-[10px] font-bold opacity-50 uppercase"></p>
+            </div>
             <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">🌙</button>
         </div>
         
         <div class="glass rounded-3xl p-5 shadow-xl mb-6 flex items-center gap-4 border-l-4 border-blue-500">
             <div id="bot-status" class="text-3xl">🤖</div>
             <div>
-                <p id="saludo-asistente" class="text-xs font-bold text-blue-500 uppercase">Asistente con Memoria</p>
-                <p id="mensaje-asistente" class="text-sm font-medium opacity-80">Estoy aprendiendo de tus facturas anteriores...</p>
+                <p id="saludo-asistente" class="text-xs font-bold text-blue-500 uppercase">Sistema de Gestión</p>
+                <p id="mensaje-asistente" class="text-sm font-medium opacity-80">Podés buscar facturas escaneando el código.</p>
             </div>
         </div>
 
@@ -36,92 +40,90 @@
             <div id="reader" class="rounded-2xl overflow-hidden bg-black mb-2 hidden"></div>
             
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="startScanner()" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear QR</button>
-                <label class="py-3 rounded-2xl bg-indigo-600 text-white font-bold text-[10px] uppercase text-center cursor-pointer">
-                    📄 Leer con IA
+                <button onclick="startScanner('registro')" class="py-3 rounded-2xl bg-blue-600 text-white font-bold text-[10px] uppercase">📸 Escanear Registro</button>
+                <label class="py-3 rounded-2xl bg-indigo-600 text-white font-bold text-[10px] text-center cursor-pointer uppercase">
+                    📄 Leer Droguería
                     <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
                 </label>
             </div>
 
-            <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div>
-                    <label class="text-[10px] font-bold ml-2 text-gray-400 uppercase">N° Comprobante</label>
-                    <input type="text" id="nroFactura" oninput="validarForm()" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold ml-2 text-gray-400 uppercase">Proveedor (Sugerido por IA)</label>
-                    <input type="text" id="proveedor" oninput="validarForm()" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <input type="text" id="descripcion" placeholder="Notas adicionales..." class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
+            <div class="space-y-3 pt-2">
+                <input type="text" id="nroFactura" oninput="validarForm()" placeholder="N° Comprobante" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="proveedor" oninput="validarForm()" placeholder="Droguería / Proveedor" class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="descripcion" placeholder="Notas..." class="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-800 outline-none">
             </div>
             
-            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg transition-all" disabled>REVISAR DATOS</button>
+            <div class="flex gap-2">
+                <button onclick="enviarDatos()" id="btnEnviar" class="flex-grow py-4 rounded-2xl bg-gray-400 text-white font-black shadow-lg transition-all" disabled>GUARDAR</button>
+                <button id="btnRafaga" onclick="toggleRafaga()" class="px-4 rounded-2xl bg-gray-200 dark:bg-gray-700 text-lg shadow-md">🚀</button>
+            </div>
         </div>
 
-        <div id="listaFacturas" class="space-y-3"></div>
+        <div class="space-y-4">
+            <div class="flex gap-2">
+                <div class="relative flex-grow">
+                    <input type="text" id="busqueda" oninput="filtrarFacturas()" placeholder="🔍 Buscar por N° o Proveedor..." class="w-full p-4 rounded-2xl glass border-none shadow-md outline-none pr-12">
+                    <button onclick="startScanner('busqueda')" class="absolute right-3 top-3 p-1.5 bg-blue-500 text-white rounded-xl shadow-lg active:scale-90 transition-transform">
+                        📷
+                    </button>
+                </div>
+                <button onclick="filtrarDroguerias()" class="px-4 rounded-2xl glass text-[10px] font-bold text-blue-500 uppercase shadow-sm">Droguerías</button>
+            </div>
+            <div id="listaFacturas" class="space-y-3"></div>
+        </div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
         let historialFacturas = [];
-        let proveedoresHistoricos = [];
+        let modoRafaga = false;
 
         window.onload = async () => {
-            const hora = new Date().getHours();
-            document.getElementById('saludo-asistente').innerText = hora < 12 ? "¡Buen día, Esteban!" : "¡Buenas tardes, Esteban!";
+            configurarInterfaz();
             await cargarHistorial();
         };
+
+        function configurarInterfaz() {
+            const ahora = new Date();
+            document.getElementById('fecha-actual').innerText = ahora.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+            const hora = ahora.getHours();
+            document.getElementById('saludo-asistente').innerText = (hora < 12) ? "¡Buen día, Esteban!" : (hora < 20) ? "¡Buenas tardes, Esteban!" : "¡Buenas noches, Esteban!";
+        }
 
         async function cargarHistorial() {
             try {
                 const res = await fetch(API_URL);
                 historialFacturas = await res.json();
-                // Extraer nombres únicos de proveedores cargados antes
-                proveedoresHistoricos = [...new Set(historialFacturas.map(f => f.proveedor.toUpperCase()))];
-                renderizarLista(historialFacturas);
-                document.getElementById('mensaje-asistente').innerText = `He aprendido de ${proveedoresHistoricos.length} proveedores anteriores.`;
-            } catch (e) { console.log("Error de carga."); }
+                renderizarLista(historialFacturas.slice().reverse());
+            } catch (e) { console.log("Error de red"); }
         }
 
         async function procesarIA(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            const msg = document.getElementById('mensaje-asistente');
-            const status = document.getElementById('bot-status');
-            msg.innerText = "Analizando texto y comparando con historial...";
-            status.innerText = "🧠";
+            document.getElementById('bot-status').innerText = "🧠";
+            document.getElementById('mensaje-asistente').innerText = "Analizando droguería...";
 
             Tesseract.recognize(file, 'spa').then(({ data: { text } }) => {
                 const rawText = text.toUpperCase();
-                console.log("IA leyó:", rawText);
-                
-                // 1. Intentar buscar N° de factura
-                const regexNro = /(\d{4,5}[- ]\d{8})|(\d{12,13})/;
-                const matchNro = rawText.match(regexNro);
-                if (matchNro) document.getElementById('nroFactura').value = matchNro[0];
-
-                // 2. BUSCAR POR APRENDIZAJE: Comparar con proveedores que ya usaste
                 let detectado = "";
-                proveedoresHistoricos.forEach(p => {
-                    if (rawText.includes(p) && p.length > 3) detectado = p;
-                });
+                const conocidos = [...new Set(historialFacturas.map(f => f.proveedor.toUpperCase()))];
+                conocidos.forEach(p => { if (rawText.includes(p)) detectado = p; });
 
-                // 3. BUSCAR POR PALABRAS CLAVE (Droguerías, etc)
-                const claves = ["DROGUERIA", "DROGUERÍAS", "FARMACIA", "LABORATORIO", "DISTRIBUIDORA"];
-                claves.forEach(c => {
-                    if (rawText.includes(c) && !detectado) {
-                        // Si encuentra la palabra clave, intenta extraer la palabra siguiente como nombre
-                        const palabras = rawText.split(/\s+/);
-                        const idx = palabras.indexOf(c);
-                        detectado = c + " " + (palabras[idx+1] || "");
-                    }
-                });
+                if (!detectado) {
+                    const claves = ["DROGUERIA", "DROGUERÍAS", "LABORATORIO", "FARMACIA"];
+                    claves.forEach(c => {
+                        if (rawText.includes(c)) {
+                            const palabras = rawText.split(/\s+/);
+                            const idx = palabras.indexOf(c);
+                            detectado = c + " " + (palabras[idx+1] || "");
+                        }
+                    });
+                }
 
                 if (detectado) document.getElementById('proveedor').value = detectado;
-                
-                status.innerText = "✅";
-                msg.innerText = detectado ? `¡Reconocí a ${detectado}!` : "No encontré coincidencias, pero podés cargarla manual.";
+                document.getElementById('bot-status').innerText = "✅";
+                document.getElementById('mensaje-asistente').innerText = detectado ? "¡Droguería detectada!" : "No reconocido, cargalo manual.";
                 validarForm();
             });
         }
@@ -133,40 +135,85 @@
             btn.disabled = !(nro && prov);
             btn.classList.toggle('bg-green-500', !btn.disabled);
             btn.classList.toggle('bg-gray-400', btn.disabled);
-            if(!btn.disabled) btn.innerText = "GUARDAR REGISTRO";
+        }
+
+        async function enviarDatos() {
+            const btn = document.getElementById('btnEnviar');
+            const ahora = new Date();
+            const fechaHora = ahora.toLocaleDateString('es-AR') + " " + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            btn.innerText = "REGISTRANDO...";
+            btn.disabled = true;
+
+            try {
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                    nroFactura: document.getElementById('nroFactura').value,
+                    proveedor: document.getElementById('proveedor').value,
+                    descripcion: document.getElementById('descripcion').value + ` (Cargado: ${fechaHora})`,
+                    precio: "0"
+                })});
+                limpiarForm();
+                await cargarHistorial();
+                if (modoRafaga) startScanner('registro');
+                else document.getElementById('mensaje-asistente').innerText = "✅ Registro exitoso.";
+            } catch (e) { alert("Error al guardar"); }
+            finally { validarForm(); btn.innerText = "GUARDAR"; }
+        }
+
+        function startScanner(modo) {
+            const reader = document.getElementById('reader');
+            reader.classList.remove('hidden');
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+                if(modo === 'registro') {
+                    document.getElementById('nroFactura').value = text;
+                    const conocido = historialFacturas.find(f => f.nroFactura == text);
+                    if(conocido) document.getElementById('proveedor').value = conocido.proveedor;
+                } else {
+                    document.getElementById('busqueda').value = text;
+                    filtrarFacturas();
+                    document.getElementById('mensaje-asistente').innerText = "🔎 Buscando código: " + text;
+                }
+                scanner.stop();
+                reader.classList.add('hidden');
+                validarForm();
+                navigator.vibrate(100);
+            });
         }
 
         function renderizarLista(datos) {
-            document.getElementById('listaFacturas').innerHTML = datos.slice(0,5).map(f => `
-                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 mb-2">
-                    <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
+            document.getElementById('listaFacturas').innerHTML = datos.slice(0,10).map(f => `
+                <div class="glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm animate-fade-in">
+                    <div class="flex justify-between items-start">
+                        <p class="font-bold text-sm text-blue-500">${f.proveedor}</p>
+                        <p class="text-[9px] opacity-40 uppercase font-black">Historial</p>
+                    </div>
                     <p class="text-xs opacity-60">N°: ${f.nroFactura}</p>
                 </div>
             `).join('');
         }
 
-        async function enviarDatos() {
-            const btn = document.getElementById('btnEnviar');
-            btn.innerText = "REGISTRANDO...";
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
-                nroFactura: document.getElementById('nroFactura').value,
-                proveedor: document.getElementById('proveedor').value,
-                descripcion: document.getElementById('descripcion').value,
-                precio: "0"
-            })});
-            location.reload();
+        function filtrarFacturas() {
+            const t = document.getElementById('busqueda').value.toLowerCase();
+            const filtradas = historialFacturas.filter(f => 
+                f.proveedor.toLowerCase().includes(t) || 
+                f.nroFactura.toString().includes(t)
+            );
+            renderizarLista(filtradas.slice().reverse());
         }
 
-        function startScanner() {
-            const reader = document.getElementById('reader');
-            reader.classList.remove('hidden');
-            const scanner = new Html5Qrcode("reader");
-            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                document.getElementById('nroFactura').value = text;
-                scanner.stop();
-                reader.classList.add('hidden');
-                validarForm();
-            });
+        function filtrarDroguerias() {
+            document.getElementById('busqueda').value = "Drogueria";
+            filtrarFacturas();
+        }
+
+        function toggleRafaga() {
+            modoRafaga = !modoRafaga;
+            document.getElementById('btnRafaga').classList.toggle('btn-rafaga-on', modoRafaga);
+            document.getElementById('mensaje-asistente').innerText = modoRafaga ? "🚀 Modo ráfaga: Escáner automático activo." : "Modo normal.";
+        }
+
+        function limpiarForm() {
+            ['nroFactura','proveedor','descripcion'].forEach(id => document.getElementById(id).value = "");
         }
 
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
