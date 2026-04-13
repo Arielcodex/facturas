@@ -10,11 +10,13 @@
     <style>
         :root { --bg-color: #f3f4f6; --card-bg: #ffffff; --text-main: #1f2937; }
         .dark-mode { --bg-color: #111827; --card-bg: #1f2937; --text-main: #f9fafb; }
-        body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; }
+        body { background-color: var(--bg-color); color: var(--text-main); transition: all 0.3s ease; min-height: 100vh; }
         .glass { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .loader { border-top-color: #3b82f6; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-4 min-h-screen">
+<body class="p-4">
 
     <div class="max-w-md mx-auto">
         <div class="flex justify-between items-center mb-6">
@@ -27,44 +29,62 @@
         <div class="glass rounded-3xl p-6 shadow-xl mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <p class="text-xs uppercase tracking-widest text-gray-500 font-bold">Productividad</p>
-                    <h2 class="text-sm text-gray-400">Facturas procesadas hoy</h2>
+                    <p class="text-xs uppercase tracking-widest text-gray-500 font-bold">Estado de Carga</p>
+                    <h2 class="text-sm text-gray-400">Total en base de datos</h2>
                 </div>
                 <div id="contador" class="text-4xl font-black text-blue-500">0</div>
             </div>
-            
             <div class="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5">
-                <div id="progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div id="progress-bar" class="bg-blue-500 h-1.5 rounded-full transition-all duration-700" style="width: 0%"></div>
             </div>
         </div>
 
         <div class="glass rounded-3xl p-6 shadow-xl space-y-4">
-            <div id="reader" class="rounded-2xl overflow-hidden mb-2"></div>
+            <div id="reader" class="rounded-2xl overflow-hidden mb-2 bg-black"></div>
             
             <button onclick="startScanner()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                📸 Escanear Código
+                📸 Escanear Código de Barras
             </button>
 
             <div class="space-y-3">
-                <input type="text" id="nroFactura" placeholder="N° de Comprobante" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="proveedor" placeholder="Proveedor / Empresa" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="text" id="descripcion" placeholder="Descripción del servicio" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                <input type="number" id="precio" placeholder="Importe ($)" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-semibold text-green-500">
+                <input type="text" id="nroFactura" placeholder="N° de Factura" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <input type="text" id="proveedor" placeholder="Proveedor / Empresa" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <input type="text" id="descripcion" placeholder="Descripción breve" class="w-full p-4 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <div class="relative">
+                    <span class="absolute left-4 top-4 text-green-500 font-bold">$</span>
+                    <input type="number" id="precio" placeholder="0.00" class="w-full p-4 pl-8 rounded-xl border-none bg-gray-100 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-semibold text-green-500">
+                </div>
             </div>
             
-            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black text-lg shadow-lg hover:bg-green-600 transition-colors">
-                GUARDAR REGISTRO
+            <button onclick="enviarDatos()" id="btnEnviar" class="w-full py-4 rounded-2xl bg-green-500 text-white font-black text-lg shadow-lg hover:bg-green-600 transition-colors flex justify-center items-center">
+                GUARDAR EN CLOUD
             </button>
         </div>
 
-        <div class="mt-6">
-            <input type="text" id="busqueda" placeholder="🔍 Buscar en el historial..." class="w-full p-4 bg-transparent border-b-2 border-gray-300 dark:border-gray-700 focus:border-blue-500 outline-none transition-colors">
+        <div class="mt-8">
+            <p class="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Búsqueda rápida</p>
+            <input type="text" id="busqueda" placeholder="Filtrar por proveedor o N°..." class="w-full p-4 rounded-2xl glass border-none shadow-inner focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
     </div>
 
     <script>
-        const API_URL = "TU_URL_DE_GOOGLE_SCRIPT_AQUI"; // Recordá pegar tu URL aquí
-        let count = 0;
+        // LA NUEVA URL QUE ME PASASTE
+        const API_URL = "https://script.google.com/macros/s/AKfycbw-nua5x1TEV3bPT9X6F6lOauMFHxU7BaGneWPyy-LMvp42CzVfBiicQ1OWyzqkfV2TPg/exec";
+        let historialLocal = [];
+
+        // Al cargar la página, traemos los datos actuales de la planilla
+        window.onload = async () => {
+            await actualizarHistorial();
+        };
+
+        async function actualizarHistorial() {
+            try {
+                const res = await fetch(API_URL);
+                historialLocal = await res.json();
+                document.getElementById('contador').innerText = historialLocal.length;
+                document.getElementById('progress-bar').style.width = Math.min(historialLocal.length * 5, 100) + '%';
+            } catch (e) { console.warn("Modo offline o error de lectura."); }
+        }
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -74,33 +94,55 @@
 
         function startScanner() {
             const html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+            const config = { fps: 15, qrbox: { width: 250, height: 150 } };
+            
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
                 document.getElementById('nroFactura').value = text;
+                // Intentar pre-llenar proveedor si ya existe en el historial
+                const conocido = historialLocal.find(f => f.nroFactura === text);
+                if (conocido) document.getElementById('proveedor').value = conocido.proveedor;
+                
                 html5QrCode.stop();
-                // Aquí podrías agregar la lógica para "adivinar" el proveedor
+                navigator.vibrate(100); // Vibración de éxito
             });
         }
 
         async function enviarDatos() {
             const btn = document.getElementById('btnEnviar');
-            btn.innerHTML = "PROCESANDO...";
+            const nro = document.getElementById('nroFactura').value;
             
-            const datos = {
-                nroFactura: document.getElementById('nroFactura').value,
+            if(!nro || !document.getElementById('precio').value) {
+                alert("Por favor completa al menos el N° y el Precio.");
+                return;
+            }
+
+            // ALERTA DE DUPLICADOS
+            const duplicado = historialLocal.find(f => f.nroFactura == nro);
+            if (duplicado) {
+                if (!confirm(`⚠️ Factura ya registrada para ${duplicado.proveedor}. ¿Continuar?`)) return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-6 w-6"></div>`;
+            
+            const payload = {
+                nroFactura: nro,
                 proveedor: document.getElementById('proveedor').value,
                 descripcion: document.getElementById('descripcion').value,
                 precio: document.getElementById('precio').value
             };
 
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(datos) });
-                count++;
-                document.getElementById('contador').innerText = count;
-                document.getElementById('progress-bar').style.width = (count * 10) + '%'; // Sube 10% por cada factura
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                alert("✅ Registro guardado exitosamente");
                 limpiar();
-                alert("✅ Registro guardado en Arielcodex Cloud");
-            } catch (e) { alert("❌ Error de conexión"); }
-            btn.innerHTML = "GUARDAR REGISTRO";
+                await actualizarHistorial(); // Refrescar contador
+            } catch (e) {
+                alert("❌ Error al conectar con el servidor.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "GUARDAR EN CLOUD";
+            }
         }
 
         function limpiar() {
