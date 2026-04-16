@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONTROL INTERNO - Panel Integral</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <title>CONTROL INTERNO - Sistema de Auditoría</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -18,7 +16,6 @@
         .active-view { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .field-error { border: 2px solid #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; }
-        /* Scrollbar estética */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
@@ -28,23 +25,23 @@
     <div id="login-screen" class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950">
         <div class="glass p-8 rounded-3xl w-80 text-center border-t-4 border-blue-500">
             <h1 class="text-blue-500 font-black text-2xl mb-1 uppercase tracking-tighter">CONTROL INTERNO</h1>
-            <p class="text-[9px] text-gray-500 uppercase font-bold mb-6">Analista: Esteban</p>
+            <p class="text-[9px] text-gray-500 uppercase font-bold mb-6 tracking-widest">Módulo Analista</p>
             <input type="text" id="userInput" onkeydown="handleEnter(event, 'passInput')" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 mb-2 text-center uppercase font-bold outline-none">
             <input type="password" id="passInput" onkeydown="handleEnter(event, 'btnLogin')" placeholder="CLAVE" class="w-full p-4 rounded-xl bg-slate-800 mb-4 text-center font-bold outline-none">
             <button id="btnLogin" onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg">INGRESAR</button>
         </div>
     </div>
 
-    <div id="app" class="max-w-6xl mx-auto hidden">
+    <div id="app" class="max-w-7xl mx-auto hidden">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div class="lg:col-span-1 space-y-4">
                 <header class="mb-4">
-                    <h2 class="text-2xl font-black text-blue-500 italic">CONTROL INTERNO</h2>
-                    <p id="userDisplay" class="text-[10px] font-bold text-gray-400 uppercase"></p>
+                    <h2 class="text-2xl font-black text-blue-500 italic uppercase">Control Interno</h2>
+                    <p id="userDisplay" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"></p>
                 </header>
 
-                <div id="form-container" class="glass rounded-3xl p-6 border-b-4 border-blue-500 space-y-4">
+                <div class="glass rounded-3xl p-6 border-b-4 border-blue-500 space-y-4">
                     <div id="reader" class="rounded-2xl overflow-hidden hidden bg-black mb-4"></div>
                     
                     <div class="grid grid-cols-2 gap-2">
@@ -56,21 +53,25 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <input type="text" id="nroFactura" onkeydown="handleEnter(event, 'proveedor')" placeholder="N° Comprobante *" class="flex-[2] p-4 rounded-xl bg-slate-800 outline-none transition-all">
+                        <input type="text" id="nroFactura" onkeydown="handleEnter(event, 'proveedor')" placeholder="N° Comprobante *" class="flex-[2] p-4 rounded-xl bg-slate-800 outline-none">
                         <select id="tipoDoc" class="flex-1 bg-slate-800 rounded-xl text-[10px] font-bold uppercase outline-none">
                             <option value="FACTURA">Factura</option>
                             <option value="REMITO">Remito</option>
                         </select>
                     </div>
 
-                    <input type="text" id="proveedor" oninput="filtrarEnVivo()" onkeydown="handleEnter(event, 'importe')" placeholder="Droguería / Proveedor *" class="w-full p-4 rounded-xl bg-slate-800 outline-none transition-all">
+                    <input type="text" id="proveedor" 
+                           oninput="this.value = this.value.toUpperCase(); updateUILists();" 
+                           onkeydown="handleEnter(event, 'importe')" 
+                           placeholder="DROGUERÍA / PROVEEDOR *" 
+                           class="w-full p-4 rounded-xl bg-slate-800 outline-none uppercase font-bold text-blue-400">
                     
                     <div class="relative">
                         <span class="absolute left-4 top-4 text-green-500 font-bold">$</span>
-                        <input type="number" id="importe" onkeydown="handleEnter(event, 'btnSave')" placeholder="Total *" class="w-full p-4 pl-8 rounded-xl bg-slate-800 font-bold text-green-400 text-2xl outline-none">
+                        <input type="number" id="importe" onkeydown="handleEnter(event, 'btnSave')" placeholder="TOTAL *" class="w-full p-4 pl-8 rounded-xl bg-slate-800 font-bold text-green-400 text-2xl outline-none">
                     </div>
 
-                    <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-500">GUARDAR</button>
+                    <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-500 transition-colors">GUARDAR REGISTRO</button>
                     <p id="valAlert" class="hidden text-center text-red-500 text-[10px] font-bold uppercase">⚠️ Completa los campos obligatorios</p>
                 </div>
 
@@ -78,39 +79,34 @@
             </div>
 
             <div class="lg:col-span-1 space-y-4">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Últimos 10 Registros / Filtro</h3>
-                <div id="liveList" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    </div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Monitor de Carga (Filtrado)</h3>
+                <div id="liveList" class="space-y-3"></div>
             </div>
 
             <div class="lg:col-span-1 space-y-4">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Análisis en Tiempo Real</h3>
-                <div class="glass p-4 rounded-3xl border-t-2 border-blue-500">
-                    <canvas id="chartPie" class="max-h-[250px]"></canvas>
-                </div>
-                <div class="glass p-4 rounded-3xl border-t-2 border-red-500">
-                    <canvas id="chartBars" class="max-h-[200px]"></canvas>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Distribución de Proveedores</h3>
+                <div class="glass p-6 rounded-3xl border-t-2 border-blue-500">
+                    <canvas id="chartPie" class="max-h-[300px]"></canvas>
                 </div>
             </div>
 
         </div>
     </div>
 
-    <div id="view-history" class="modal-view p-4">
-        <div class="max-w-4xl mx-auto">
+    <div id="view-history" class="modal-view p-6">
+        <div class="max-w-5xl mx-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black text-blue-500 uppercase">AUDITORÍA COMPLETA</h3>
+                <h3 class="text-2xl font-black text-blue-500 uppercase">Auditoría Completa</h3>
                 <button onclick="toggleView('app')" class="p-4 bg-slate-800 rounded-full">✕</button>
             </div>
-            <div id="fullHistoryList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="fullHistoryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
     </div>
 
     <script>
-        const API = "https://script.google.com/macros/s/AKfycbwkYjCcMhJlJrcZyAdtxbVICK12yAXfAi8Li40AvME8sXIQUl8Rqe8EyZzameVohIOszw/exec";
-        let history = [];
-        let user = "";
-        let currentOCRTags = "NORMAL";
+        const API = "TU_URL_DE_APPS_SCRIPT_AQUI"; // REEMPLAZAR CON TU URL REAL
+        let historyData = [];
+        let currentUser = "";
 
         function handleEnter(event, nextId) {
             if (event.key === "Enter") {
@@ -123,10 +119,10 @@
         function login() {
             const userIn = document.getElementById('userInput').value.trim().toUpperCase();
             if (userIn === "ESTEBAN" || userIn === "OMAR") {
-                user = userIn;
+                currentUser = userIn;
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = `Operador: ${user}`;
+                document.getElementById('userDisplay').innerText = `Analista: ${currentUser}`;
                 loadHistory();
             }
         }
@@ -134,115 +130,135 @@
         async function loadHistory() {
             try {
                 const res = await fetch(API);
-                history = await res.json();
-                renderCharts();
+                const rawData = await res.json();
+                
+                // Normalización blindada de datos del Sheet
+                historyData = rawData.map(f => ({
+                    proveedor: f.proveedor || f.Proveedor || "S/D",
+                    precio: f.precio || f.Precio || 0,
+                    nroFactura: f.nroFactura || f["Nro de Factura"] || "0",
+                    descripcion: f.descripcion || f.Descripción || "",
+                    estado: f.estado || f.Estado || "PENDIENTE"
+                }));
+
                 updateUILists();
-            } catch(e) { console.error("Error de carga"); }
+                renderCharts();
+            } catch(e) { console.error("Error al sincronizar"); }
         }
 
         function updateUILists() {
             const query = document.getElementById('proveedor').value.toLowerCase();
-            const filtered = history.filter(f => f.proveedor.toLowerCase().includes(query)).reverse();
+            const filtered = historyData.filter(f => f.proveedor.toLowerCase().includes(query)).reverse();
             
-            // Lista lateral (últimas 10)
-            document.getElementById('liveList').innerHTML = filtered.slice(0, 10).map(f => cardHTML(f)).join('');
-            
-            // Lista completa modal
-            document.getElementById('fullHistoryList').innerHTML = filtered.map(f => cardHTML(f)).join('');
-        }
-
-        function cardHTML(f) {
-            const isAlert = f.descripcion.includes('ALERTA');
-            return `
-                <div class="glass p-4 rounded-2xl border-l-4 ${isAlert ? 'border-red-500' : 'border-blue-500'} animate-fadeIn">
+            const renderCard = (f) => `
+                <div class="glass p-4 rounded-2xl border-l-4 ${f.estado === 'CARGADO' ? 'border-green-500' : 'border-blue-500'} animate-fadeIn">
                     <div class="flex justify-between items-start">
                         <p class="font-black text-blue-400 text-sm uppercase">${f.proveedor}</p>
                         <p class="text-[14px] text-green-400 font-bold">$${f.precio}</p>
                     </div>
-                    <div class="flex justify-between mt-2 opacity-60 text-[10px] font-bold">
+                    <div class="flex justify-between mt-2 opacity-60 text-[10px] font-bold uppercase">
                         <span>N° ${f.nroFactura}</span>
-                        <span>${f.descripcion.split('|')[0]}</span>
+                        <span>${f.estado}</span>
                     </div>
                 </div>`;
-        }
 
-        function filtrarEnVivo() {
-            updateUILists();
+            document.getElementById('liveList').innerHTML = filtered.slice(0, 10).map(renderCard).join('') || "<p class='text-center opacity-30 text-xs'>SIN REGISTROS</p>";
+            document.getElementById('fullHistoryList').innerHTML = filtered.map(renderCard).join('');
         }
 
         async function saveData() {
             const btn = document.getElementById('btnSave');
-            const nro = document.getElementById('nroFactura');
-            const prov = document.getElementById('proveedor');
-            const imp = document.getElementById('importe');
+            const fields = {
+                nro: document.getElementById('nroFactura'),
+                prov: document.getElementById('proveedor'),
+                imp: document.getElementById('importe')
+            };
 
-            if (!nro.value || !prov.value || !imp.value) {
+            if (!fields.nro.value || !fields.prov.value || !fields.imp.value) {
                 document.getElementById('valAlert').classList.remove('hidden');
+                Object.values(fields).forEach(f => !f.value ? f.classList.add('field-error') : f.classList.remove('field-error'));
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "GUARDANDO...";
+            btn.innerText = "SINCRONIZANDO...";
 
-            const data = {
-                nroFactura: nro.value,
-                proveedor: prov.value,
-                precio: imp.value,
-                descripcion: `${document.getElementById('tipoDoc').value} | ${currentOCRTags} | ${user}`,
-                firma: "N/A"
+            const payload = {
+                nroFactura: fields.nro.value,
+                proveedor: fields.prov.value.toUpperCase(),
+                precio: fields.imp.value,
+                descripcion: `${document.getElementById('tipoDoc').value} | RESP: ${currentUser}`,
+                estado: "CARGADO"
             };
 
             try {
-                await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                 clearForm();
-                await loadHistory();
-            } catch(e) { alert("Error"); }
-            finally { btn.disabled = false; btn.innerText = "GUARDAR"; }
+                setTimeout(loadHistory, 1500); // Tiempo para que Google procese el registro
+            } catch(e) { alert("Error de red"); }
+            finally { btn.disabled = false; btn.innerText = "GUARDAR REGISTRO"; }
         }
 
-        let chartP, chartB;
+        let myChart;
         function renderCharts() {
-            const tags = { 'NORMAL': 0, 'BONIFICACION': 0, 'NOTA CREDITO': 0, 'GASTO ENVIO': 0 };
-            history.forEach(f => { for (let t in tags) if (f.descripcion.includes(t)) tags[t]++; });
+            const ctx = document.getElementById('chartPie').getContext('2d');
+            if (myChart) myChart.destroy();
 
-            if (chartP) chartP.destroy();
-            chartP = new Chart(document.getElementById('chartPie'), {
+            const counts = {};
+            historyData.forEach(f => counts[f.proveedor] = (counts[f.proveedor] || 0) + 1);
+
+            myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(tags),
-                    datasets: [{ data: Object.values(tags), backgroundColor: ['#475569', '#3b82f6', '#10b981', '#f59e0b'] }]
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#f43f5e'],
+                        borderWidth: 0
+                    }]
                 },
-                options: { plugins: { legend: { position: 'bottom', labels: { color: 'white', font: { size: 9 } } } } }
-            });
-            
-            // Gráfico de barras (simplificado para la vista lateral)
-            if (chartB) chartB.destroy();
-            chartB = new Chart(document.getElementById('chartBars'), {
-                type: 'bar',
-                data: {
-                    labels: ['S1', 'S2', 'S3', 'S4'],
-                    datasets: [{ label: 'Cargas', data: [10, 20, 15, 25], backgroundColor: '#3b82f6' }]
-                },
-                options: { scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
+                options: { 
+                    plugins: { legend: { position: 'bottom', labels: { color: 'white', font: { size: 9 } } } } 
+                }
             });
         }
 
         function clearForm() {
-            ['nroFactura', 'proveedor', 'importe'].forEach(id => document.getElementById(id).value = "");
+            ['nroFactura', 'proveedor', 'importe'].forEach(id => {
+                const el = document.getElementById(id);
+                el.value = "";
+                el.classList.remove('field-error');
+            });
+            document.getElementById('valAlert').classList.add('hidden');
             document.getElementById('nroFactura').focus();
-            filtrarEnVivo();
+            updateUILists();
         }
 
         function toggleView(view) {
             document.getElementById('view-history').classList.toggle('active-view', view === 'history');
         }
 
-        async function procesarIA(event) {
-            // Reutiliza la lógica OCR anterior...
+        // --- Funciones de Cámara/IA (Básicas) ---
+        function startScan() {
+            const reader = document.getElementById('reader');
+            reader.classList.remove('hidden');
+            const sc = new Html5Qrcode("reader");
+            sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                document.getElementById('nroFactura').value = txt;
+                sc.stop(); reader.classList.add('hidden');
+            });
         }
 
-        function startScan() {
-            // Reutiliza la lógica de escaneo anterior...
+        async function procesarIA(event) {
+            const status = document.getElementById('valAlert');
+            status.innerText = "🤖 ESCANEANDO...";
+            status.classList.remove('hidden');
+            const worker = await Tesseract.createWorker('spa');
+            const { data: { text } } = await worker.recognize(event.target.files[0]);
+            const match = text.match(/\$?\s?([\d\.,]+)/);
+            if (match) document.getElementById('importe').value = match[1].replace('.','').replace(',','.');
+            await worker.terminate();
+            status.classList.add('hidden');
         }
     </script>
 </body>
