@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONTROL INTERNO - Auditoría Local Time</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>CONTROL INTERNO - Final Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg: #0f172a; --glass: rgba(30, 41, 59, 0.7); }
@@ -15,19 +13,15 @@
         .modal-view { display: none; position: fixed; inset: 0; z-index: 100; background: #0f172a; overflow-y: auto; }
         .active-view { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .field-error { border: 2px solid #ef4444 !important; background: rgba(239, 68, 68, 0.1) !important; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
-<body class="p-2 md:p-6">
+<body class="p-4">
 
     <div id="login-screen" class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950">
-        <div class="glass p-8 rounded-3xl w-80 text-center border-t-4 border-blue-500">
-            <h1 class="text-blue-500 font-black text-2xl mb-1 uppercase tracking-tighter">CONTROL INTERNO</h1>
-            <input type="text" id="userInput" onkeydown="handleEnter(event, 'passInput')" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 mb-2 text-center uppercase font-bold outline-none">
-            <input type="password" id="passInput" onkeydown="handleEnter(event, 'btnLogin')" placeholder="CLAVE" class="w-full p-4 rounded-xl bg-slate-800 mb-4 text-center font-bold outline-none">
-            <button id="btnLogin" onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black shadow-lg">INGRESAR</button>
+        <div class="glass p-8 rounded-3xl w-80 text-center">
+            <h1 class="text-blue-500 font-black text-2xl mb-6">CONTROL INTERNO</h1>
+            <input type="text" id="userInput" placeholder="USUARIO" class="w-full p-4 rounded-xl bg-slate-800 mb-2 text-center uppercase outline-none">
+            <button onclick="login()" class="w-full py-4 bg-blue-600 rounded-xl font-black">INGRESAR</button>
         </div>
     </div>
 
@@ -35,58 +29,23 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div class="lg:col-span-1 space-y-4">
-                <header class="mb-4 text-center lg:text-left">
-                    <h2 class="text-2xl font-black text-blue-500 italic uppercase">Control Interno</h2>
-                    <p id="userDisplay" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"></p>
-                </header>
-
                 <div class="glass rounded-3xl p-6 border-b-4 border-blue-500 space-y-4">
-                    <div id="reader" class="rounded-2xl overflow-hidden hidden bg-black mb-4"></div>
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="startScan()" class="py-3 bg-blue-600 rounded-xl font-bold text-[10px] uppercase">📸 QR</button>
-                        <label class="py-3 bg-indigo-600 rounded-xl font-bold text-[10px] uppercase text-center cursor-pointer">
-                            🔍 IA OCR
-                            <input type="file" accept="image/*" capture="environment" class="hidden" onchange="procesarIA(event)">
-                        </label>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <input type="text" id="nroFactura" onkeydown="handleEnter(event, 'proveedor')" placeholder="N° Comprobante *" class="flex-[2] p-4 rounded-xl bg-slate-800 outline-none">
-                        <select id="tipoDoc" class="flex-1 bg-slate-800 rounded-xl text-[10px] font-bold uppercase outline-none">
-                            <option value="FACTURA">Factura</option>
-                            <option value="REMITO">Remito</option>
-                        </select>
-                    </div>
-
-                    <input type="text" id="proveedor" 
-                           oninput="this.value = this.value.toUpperCase(); updateUILists();" 
-                           onkeydown="handleEnter(event, 'importe')" 
-                           placeholder="DROGUERÍA / PROVEEDOR *" 
-                           class="w-full p-4 rounded-xl bg-slate-800 outline-none uppercase font-bold text-blue-400">
-                    
-                    <div class="relative">
-                        <span class="absolute left-4 top-4 text-green-500 font-bold">$</span>
-                        <input type="number" id="importe" onkeydown="handleEnter(event, 'btnSave')" placeholder="TOTAL *" class="w-full p-4 pl-8 rounded-xl bg-slate-800 font-bold text-green-400 text-2xl outline-none">
-                    </div>
-
-                    <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black uppercase shadow-xl hover:bg-blue-500 transition-all">GUARDAR REGISTRO</button>
-                    <p id="valAlert" class="hidden text-center text-red-500 text-[10px] font-bold uppercase">⚠️ Completa los campos obligatorios</p>
+                    <input type="text" id="nroFactura" placeholder="N° Comprobante *" class="w-full p-4 rounded-xl bg-slate-800 outline-none">
+                    <input type="text" id="proveedor" oninput="this.value = this.value.toUpperCase(); updateUILists();" placeholder="DROGUERÍA *" class="w-full p-4 rounded-xl bg-slate-800 outline-none text-blue-400 font-bold">
+                    <input type="number" id="importe" placeholder="TOTAL *" class="w-full p-4 rounded-xl bg-slate-800 font-bold text-green-400 text-2xl outline-none">
+                    <button id="btnSave" onclick="saveData()" class="w-full py-5 bg-blue-600 rounded-2xl font-black uppercase">GUARDAR</button>
                 </div>
-
-                <button onclick="toggleView('history')" class="w-full py-4 glass border border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest">Ver Historial Completo</button>
+                <button onclick="toggleView('history')" class="w-full py-4 glass rounded-2xl font-black text-xs uppercase">Ver Historial Completo</button>
             </div>
 
             <div class="lg:col-span-1 space-y-4">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Monitor de Carga Local</h3>
+                <h3 class="text-xs font-black text-gray-400 uppercase px-2">Monitor en Vivo</h3>
                 <div id="liveList" class="space-y-3"></div>
             </div>
 
             <div class="lg:col-span-1 space-y-4">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Análisis de Proveedores</h3>
-                <div class="glass p-6 rounded-3xl border-t-2 border-blue-500">
-                    <canvas id="chartPie" class="max-h-[300px]"></canvas>
-                </div>
+                <h3 class="text-xs font-black text-gray-400 uppercase px-2">Estadísticas</h3>
+                <div class="glass p-6 rounded-3xl"><canvas id="chartPie"></canvas></div>
             </div>
         </div>
     </div>
@@ -94,33 +53,23 @@
     <div id="view-history" class="modal-view p-6">
         <div class="max-w-5xl mx-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-black text-blue-500 uppercase">Auditoría Completa</h3>
+                <h3 class="text-2xl font-black text-blue-500">HISTORIAL COMPLETO</h3>
                 <button onclick="toggleView('app')" class="p-4 bg-slate-800 rounded-full">✕</button>
             </div>
-            <div id="fullHistoryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="fullHistoryList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
     </div>
 
     <script>
-        const API = "TU_URL_DE_APPS_SCRIPT_AQUI"; // REEMPLAZAR
+        const API = "TU_URL_AQUI"; // REEMPLAZA CON LA NUEVA URL
         let historyData = [];
-        let currentUser = "";
-
-        function handleEnter(event, nextId) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                const el = document.getElementById(nextId);
-                el.tagName === "BUTTON" ? el.click() : el.focus();
-            }
-        }
+        let user = "";
 
         function login() {
-            const userIn = document.getElementById('userInput').value.trim().toUpperCase();
-            if (userIn === "ESTEBAN" || userIn === "OMAR") {
-                currentUser = userIn;
+            user = document.getElementById('userInput').value.toUpperCase();
+            if(user) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = `Analista: ${currentUser}`;
                 loadHistory();
             }
         }
@@ -128,18 +77,10 @@
         async function loadHistory() {
             try {
                 const res = await fetch(API);
-                const rawData = await res.json();
-                historyData = rawData.map(f => ({
-                    proveedor: f.proveedor || f.Proveedor || "S/D",
-                    precio: f.precio || f.Precio || 0,
-                    nroFactura: f.nroFactura || f["Nro de Factura"] || "0",
-                    descripcion: f.descripcion || f.Descripción || "",
-                    estado: f.estado || f.Estado || "PENDIENTE",
-                    fecha: f.fecha || f.Fecha || ""
-                }));
+                historyData = await res.json();
                 updateUILists();
                 renderCharts();
-            } catch(e) { console.error("Error de sincronización"); }
+            } catch(e) { console.error("Error cargando datos"); }
         }
 
         function updateUILists() {
@@ -147,112 +88,58 @@
             const filtered = historyData.filter(f => f.proveedor.toLowerCase().includes(query)).reverse();
             
             const renderCard = (f) => `
-                <div class="glass p-4 rounded-2xl border-l-4 ${f.estado === 'CARGADO' ? 'border-green-500' : 'border-blue-500'} animate-fadeIn">
-                    <div class="flex justify-between items-start">
-                        <p class="font-black text-blue-400 text-sm uppercase">${f.proveedor}</p>
-                        <p class="text-[14px] text-green-400 font-bold">$${f.precio}</p>
+                <div class="glass p-4 rounded-2xl border-l-4 border-green-500 animate-fadeIn">
+                    <div class="flex justify-between">
+                        <span class="font-black text-blue-400 uppercase">${f.proveedor}</span>
+                        <span class="font-bold text-green-400">$${f.precio}</span>
                     </div>
-                    <div class="mt-2 text-[9px] font-bold uppercase opacity-50 flex justify-between">
-                        <span>N° ${f.nroFactura} | ${f.estado}</span>
-                        <span>${f.fecha.split(' ')[1] || ''}</span>
-                    </div>
+                    <p class="text-[10px] opacity-50 font-bold mt-1 uppercase">N° ${f.nroFactura} | ${f.fecha || ''}</p>
                 </div>`;
 
-            document.getElementById('liveList').innerHTML = filtered.slice(0, 10).map(renderCard).join('') || "<p class='text-center opacity-30 text-xs'>SIN DATOS</p>";
+            document.getElementById('liveList').innerHTML = filtered.slice(0, 10).map(renderCard).join('') || "<p class='opacity-30 text-center'>SIN DATOS</p>";
             document.getElementById('fullHistoryList').innerHTML = filtered.map(renderCard).join('');
         }
 
         async function saveData() {
             const btn = document.getElementById('btnSave');
-            const fields = {
-                nro: document.getElementById('nroFactura'),
-                prov: document.getElementById('proveedor'),
-                imp: document.getElementById('importe')
-            };
-
-            if (!fields.nro.value || !fields.prov.value || !fields.imp.value) {
-                document.getElementById('valAlert').classList.remove('hidden');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "PROCESANDO HORA...";
-
-            // CAPTURA DE HORA LOCAL DEL DISPOSITIVO
-            const ahora = new Date();
-            const fechaLocal = ahora.toLocaleString('es-AR', { 
-                day: '2-digit', month: '2-digit', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit', second: '2-digit' 
-            });
-
             const payload = {
-                fechaLocal: fechaLocal, // Enviamos la hora del dispositivo
-                nroFactura: fields.nro.value,
-                proveedor: fields.prov.value.toUpperCase(),
-                precio: fields.imp.value,
-                descripcion: `${document.getElementById('tipoDoc').value} | RESP: ${currentUser}`,
+                fechaLocal: new Date().toLocaleString('es-AR'),
+                nroFactura: document.getElementById('nroFactura').value,
+                proveedor: document.getElementById('proveedor').value.toUpperCase(),
+                precio: document.getElementById('importe').value,
+                descripcion: `CARGA APP | ${user}`,
                 estado: "CARGADO"
             };
 
-            try {
-                await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                clearForm();
-                setTimeout(loadHistory, 1500);
-            } catch(e) { alert("Error de conexión"); }
-            finally { btn.disabled = false; btn.innerText = "GUARDAR REGISTRO"; }
-        }
+            if(!payload.nroFactura || !payload.proveedor || !payload.precio) return alert("Faltan datos");
 
-        function clearForm() {
-            ['nroFactura', 'proveedor', 'importe'].forEach(id => document.getElementById(id).value = "");
-            document.getElementById('valAlert').classList.add('hidden');
-            document.getElementById('nroFactura').focus();
-            updateUILists();
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
+            await fetch(API, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            
+            document.getElementById('nroFactura').value = "";
+            document.getElementById('importe').value = "";
+            btn.disabled = false; btn.innerText = "GUARDAR";
+            
+            setTimeout(loadHistory, 1500);
         }
 
         function toggleView(view) {
             document.getElementById('view-history').classList.toggle('active-view', view === 'history');
         }
 
-        let myChart;
         function renderCharts() {
             const ctx = document.getElementById('chartPie').getContext('2d');
-            if (myChart) myChart.destroy();
+            if(window.myChart) window.myChart.destroy();
             const counts = {};
             historyData.forEach(f => counts[f.proveedor] = (counts[f.proveedor] || 0) + 1);
-            myChart = new Chart(ctx, {
+            window.myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(counts),
-                    datasets: [{
-                        data: Object.values(counts),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899'],
-                        borderWidth: 0
-                    }]
+                    datasets: [{ data: Object.values(counts), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'] }]
                 },
-                options: { plugins: { legend: { position: 'bottom', labels: { color: 'white', font: { size: 9 } } } } }
+                options: { plugins: { legend: { labels: { color: 'white', font: { size: 10 } } } } }
             });
-        }
-
-        // --- OCR & QR ---
-        function startScan() {
-            const reader = document.getElementById('reader');
-            reader.classList.remove('hidden');
-            const sc = new Html5Qrcode("reader");
-            sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                document.getElementById('nroFactura').value = txt;
-                sc.stop(); reader.classList.add('hidden');
-            });
-        }
-
-        async function procesarIA(event) {
-            const status = document.getElementById('valAlert');
-            status.innerText = "🤖 ESCANEANDO..."; status.classList.remove('hidden');
-            const worker = await Tesseract.createWorker('spa');
-            const { data: { text } } = await worker.recognize(event.target.files[0]);
-            const match = text.match(/\$?\s?([\d\.,]{3,})/);
-            if (match) document.getElementById('importe').value = match[1].replace('.','').replace(',','.');
-            await worker.terminate();
-            status.classList.add('hidden');
         }
     </script>
 </body>
