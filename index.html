@@ -102,16 +102,30 @@
             }
         }
 
-        function login() {
-            const userIn = document.getElementById('userInput').value.trim().toUpperCase();
-            if (userIn) {
-                currentUser = userIn;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = `Analista: ${currentUser}`;
-                loadHistory();
-            }
-        }
+       function login() {
+    // Obtenemos el valor, quitamos espacios y pasamos a mayúsculas
+    const userIn = document.getElementById('userInput').value.trim().toUpperCase();
+
+    // Definimos los usuarios autorizados
+    const autorizados = ["ESTEBAN", "OMAR"];
+
+    if (autorizados.includes(userIn)) {
+        currentUser = userIn;
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        document.getElementById('userDisplay').innerText = `Analista: ${currentUser}`;
+        
+        // Cargamos los datos del Sheet una vez que el usuario es válido
+        loadHistory();
+    } else {
+        // Alerta visual si el usuario no es correcto
+        const inputLogin = document.getElementById('userInput');
+        inputLogin.classList.add('field-error');
+        alert("USUARIO NO AUTORIZADO");
+        inputLogin.value = "";
+        inputLogin.focus();
+    }
+}
 
         async function loadHistory() {
     try {
