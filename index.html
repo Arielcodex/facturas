@@ -114,21 +114,29 @@
         }
 
         async function loadHistory() {
-            try {
-                const res = await fetch(API);
-                const rawData = await res.json();
-                historyData = rawData.map(f => ({
-                    proveedor: f.proveedor || f.Proveedor || "S/D",
-                    precio: f.precio || f.Precio || 0,
-                    nroFactura: f.nroFactura || f["nrodefactura"] || "0",
-                    fecha: f.fecha || f.Fecha || "",
-                    estado: f.estado || f.Estado || "CARGADO",
-                    descripcion: f.descripcion || f.Descripción || ""
-                }));
-                updateUILists();
-                renderCharts();
-            } catch(e) { console.error("Error cargando historial"); }
-        }
+    try {
+        const res = await fetch(API);
+        const rawData = await res.json();
+        
+        // AQUÍ ES DONDE SE AGREGA O MODIFICA:
+        historyData = rawData.map(f => ({
+            proveedor: f.proveedor || f.Proveedor || "S/D",
+            precio: f.precio || f.Precio || 0,
+            
+            // Esta es la línea corregida para que lea "Nro de Factura" del Sheet
+            nroFactura: f.nrodefactura || f.nroFactura || f["Nro de Factura"] || "0",
+            
+            fecha: f.fecha || f.Fecha || "",
+            estado: f.estado || f.Estado || "CARGADO",
+            descripcion: f.descripcion || f.Descripción || ""
+        }));
+
+        updateUILists();
+        renderCharts();
+    } catch(e) { 
+        console.error("Error al cargar historial:", e); 
+    }
+}
 
         function updateUILists() {
             const query = document.getElementById('proveedor').value.toLowerCase();
